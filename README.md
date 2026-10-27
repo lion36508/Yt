@@ -30,3 +30,8 @@ The app runs on a strict **2-Engine, 4-Library Architecture** to ensure zero cra
 
 ---
 *Developed by lion36508. Free and Open Source under the MIT License.*
+
+## ⚠️ Disclaimer & Ethical Use (उपयोग के सख्त नियम)
+This project is **strictly for educational, research, and developer purposes** only. It is **not** created for any business, commercial, or profitable organization. 
+
+This is a free and Open-Source project. It can be used by anyone, but **strictly for good and ethical purposes**. Any use of this project for illegal, unauthorized, or "dark" activities is strictly prohibited. The developer is not responsible for any misuse of this tool.
