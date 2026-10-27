@@ -129,7 +129,6 @@ public class DashboardActivity extends Activity {
 
         getSharedPreferences("nexora_permanent_auth", MODE_PRIVATE).edit().putBoolean("boxes_ticked_and_started", true).apply();
         requestAppPermissions();
-        initNativeYtDlpAndFfmpeg();
         bindViews();
         tvSelectedFormatBtn.setText("DL " + selectedFormatLabel.split("_")[0]);
 
@@ -702,129 +701,26 @@ public class DashboardActivity extends Activity {
         } else {
             currentVideoUrl = "https://www.youtube.com/watch?v=" + currentVideoId;
             etUrl.setText(currentVideoUrl);
-            resolveWorkingStreamInBackground(currentVideoId, currentTitle, false, "", "");
+            openOfficialYouTube(currentVideoUrl);
         }
     }
 
-    private File ytDlpBinFile;
-    private File ffmpegBinFile;
-
-    private void initNativeYtDlpAndFfmpeg() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    File appDir = getFilesDir();
-                    ytDlpBinFile = new File(appDir, "ytdlp");
-                    ffmpegBinFile = new File(appDir, "ffmpeg");
-
-                    if (!ytDlpBinFile.exists() || ytDlpBinFile.length() < 1024) {
-                        InputStream is = getResources().openRawResource(R.raw.ytdlp);
-                        FileOutputStream fos = new FileOutputStream(ytDlpBinFile);
-                        byte[] buf = new byte[16384];
-                        int n;
-                        while ((n = is.read(buf)) > 0) fos.write(buf, 0, n);
-                        fos.close();
-                        is.close();
-                    }
-                    ytDlpBinFile.setExecutable(true, false);
-
-                    if (!ffmpegBinFile.exists() || ffmpegBinFile.length() < 1024) {
-                        InputStream is2 = getResources().openRawResource(R.raw.ffmpeg);
-                        FileOutputStream fos2 = new FileOutputStream(ffmpegBinFile);
-                        byte[] buf2 = new byte[16384];
-                        int n2;
-                        while ((n2 = is2.read(buf2)) > 0) fos2.write(buf2, 0, n2);
-                        fos2.close();
-                        is2.close();
-                    }
-                    ffmpegBinFile.setExecutable(true, false);
-                } catch (Exception ignored) {}
-            }
-        }).start();
-    }
-
-    private void resolveWorkingStreamInBackground(final String videoId, final String titleHint, final boolean downloadAfter, final String fmtLabel, final String fmtExt) {
-    if (!downloadAfter && realVideoView.isPlaying()) {
-        realVideoView.stopPlayback();
-        isNativeVideoPrepared = false;
-    }
-    final String activeVid = (videoId != null && !videoId.isEmpty()) ? videoId : currentVideoId;
-    
-    new Thread(new Runnable() {
-        @Override
-        public void run() {
-            String directUrl = "";
-            final String targetUrl = "https://www.youtube.com/watch?v=" + activeVid;
-            
-            try {
-                // 1. एकदम सही तरीका: TermuxEngine को कॉल करो
-                TermuxEngine engine = new TermuxEngine(DashboardActivity.this);
-                
-                // 2. Termux के अंदर Python चलाकर yt-dlp को रन करो (-g से सिर्फ स्ट्रीमिंग लिंक मिलेगा)
-                // यह कमांड खुद yt-dlp ढूंढेगा और उसे पाइथन के जरिए चलाएगा
-                String cmd = "YT_PATH=$(find $HOME -name yt-dlp 2>/dev/null | head -n 1); if [ -z '$YT_PATH' ]; then YT_PATH='yt-dlp'; fi; python3 '$YT_PATH' --no-check-certificate -g -f 'best[ext=mp4]/best' '" + targetUrl + "'";
-                
-                String output = engine.exec(cmd);
-                
-                // 3. आउटपुट में से http लिंक को फिल्टर करना
-                String[] lines = output.split("\n");
-                for (String line : lines) {
-                    if (line.trim().startsWith("http")) {
-                        directUrl = line.trim();
-                        break;
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            
-            // 4. बैकअप (अगर yt-dlp को कभी अपडेट की जरूरत पड़े तो ऐप न रुके)
-            if (directUrl.isEmpty()) {
-                try {
-                    java.net.URL u = new java.net.URL("https://pipedapi.kavin.rocks/streams/" + activeVid);
-                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) u.openConnection();
-                    conn.setRequestMethod("GET");
-                    conn.setConnectTimeout(5000);
-                    if (conn.getResponseCode() == 200) {
-                        java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
-                        StringBuilder sb = new StringBuilder();
-                        String line2;
-                        while ((line2 = br.readLine()) != null) sb.append(line2);
-                        br.close();
-                        org.json.JSONObject root = new org.json.JSONObject(sb.toString());
-                        String hls = root.optString("hls", "");
-                        if (hls.startsWith("http")) directUrl = hls;
-                        else {
-                            org.json.JSONArray vStreams = root.optJSONArray("videoStreams");
-                            if (vStreams != null && vStreams.length() > 0) directUrl = vStreams.getJSONObject(0).optString("url", "");
-                        }
-                    }
-                } catch (Exception ignored) {}
-            }
-            
-            final String finalUrl = directUrl;
-            
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (!finalUrl.isEmpty()) {
-                        currentDirectMp4 = finalUrl;
-                        if (downloadAfter) {
-                            executeDirectHttpFileDownload(finalUrl, fmtLabel, fmtExt);
-                        } else {
-                            playDirectMp4InNativeView(finalUrl);
-                        }
-                    } else {
-                        tvQualityBadge.setText("ERROR");
-                        tvActiveSub.setText("Termux Engine (Python) failed to load stream.");
-                        btnCenterPlay.setVisibility(View.VISIBLE);
-                    }
-                }
-            });
+    /**
+     * YouTube links are intentionally handed to the official client/browser.
+     * The app must not attempt to bypass YouTube access controls or extract
+     * protected streams. Direct, user-authorized media URLs remain supported.
+     */
+    private void openOfficialYouTube(final String url) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            startActivity(intent);
+            tvQualityBadge.setText("YOUTUBE");
+            tvActiveSub.setText("Opened in the official YouTube app/browser.");
+        } catch (Exception e) {
+            tvQualityBadge.setText("OPEN ERROR");
+            tvActiveSub.setText("No app can open this YouTube link.");
         }
-    }).start();
-}
+    }
 
 private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
         try {
@@ -904,13 +800,23 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
             Toast.makeText(this, "Select a video first!", Toast.LENGTH_SHORT).show();
             return;
         }
+        if (isYouTubeUrl(currentVideoUrl) || (currentDirectMp4 == null || currentDirectMp4.isEmpty()) && !currentVideoId.isEmpty()) {
+            Toast.makeText(this, "YouTube downloads are unavailable. Use a direct URL for content you own or are licensed to download.", Toast.LENGTH_LONG).show();
+            tvQualityBadge.setText("YOUTUBE");
+            tvActiveSub.setText("Open YouTube in its official app/browser; direct authorized URLs are supported here.");
+            return;
+        }
         if (currentDirectMp4 != null && !currentDirectMp4.isEmpty()) {
             executeDirectHttpFileDownload(currentDirectMp4, fmtLabel, fmtExt);
         } else {
-            tvQualityBadge.setText("FETCHING DL...");
-            tvActiveSub.setText("Resolving " + fmtLabel + " stream from server...");
-            resolveWorkingStreamInBackground(currentVideoId, currentTitle, true, fmtLabel, fmtExt);
+            Toast.makeText(this, "No direct media URL is available.", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private boolean isYouTubeUrl(String url) {
+        if (url == null) return false;
+        String value = url.toLowerCase(java.util.Locale.US);
+        return value.contains("youtube.com/") || value.contains("youtu.be/");
     }
 
     private void executeDirectHttpFileDownload(final String streamUrl, final String fmtLabel, final String fmtExt) {
@@ -927,9 +833,13 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
             @Override
             public void run() {
                 try {
+                    if (!streamUrl.startsWith("https://") && !streamUrl.startsWith("http://")) {
+                        throw new java.io.IOException("Only HTTP(S) media URLs are supported");
+                    }
                     File nexoraDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "NEXORA");
                     if (!nexoraDir.exists()) nexoraDir.mkdirs();
                     final File outFile = new File(nexoraDir, fileName);
+                    final File partialFile = new File(nexoraDir, fileName + ".part");
 
                     HttpURLConnection conn = (HttpURLConnection) new URL(streamUrl).openConnection();
                     conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36");
@@ -937,10 +847,14 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                     conn.setConnectTimeout(10000);
                     conn.setReadTimeout(15000);
                     conn.connect();
+                    int responseCode = conn.getResponseCode();
+                    if (responseCode < 200 || responseCode >= 300) {
+                        throw new java.io.IOException("Server returned HTTP " + responseCode);
+                    }
 
                     int totalBytes = conn.getContentLength();
                     InputStream is = conn.getInputStream();
-                    FileOutputStream fos = new FileOutputStream(outFile);
+                    FileOutputStream fos = new FileOutputStream(partialFile);
 
                     byte[] buf = new byte[16384];
                     int read;
@@ -968,6 +882,9 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                     fos.flush();
                     fos.close();
                     is.close();
+                    if (!partialFile.renameTo(outFile)) {
+                        throw new java.io.IOException("Could not finalize downloaded file");
+                    }
 
                     String mime = fmtExt.equals(".mp3") ? "audio/mpeg" : (fmtExt.equals(".m4a") ? "audio/mp4" : (fmtExt.equals(".wav") ? "audio/wav" : "video/mp4"));
                     MediaScannerConnection.scanFile(
@@ -989,6 +906,8 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                         }
                     });
                 } catch (final Exception e) {
+                    File partial = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "NEXORA/" + fileName + ".part");
+                    if (partial.exists()) partial.delete();
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -1427,7 +1346,8 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                     currentVideoId = ytId;
                     currentTitle = "YouTube Video (" + ytId + ")";
                     tvActiveTitle.setText(currentTitle);
-                    resolveWorkingStreamInBackground(ytId, currentTitle, false, "", "");
+                    currentDirectMp4 = "";
+                    openOfficialYouTube(link);
                 } else {
                     currentDirectMp4 = link;
                     currentTitle = "Direct Link Video";
