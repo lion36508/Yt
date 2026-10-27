@@ -5,8 +5,11 @@
     android:layout_height="match_parent"
     android:background="#03060C">
 
+    <!-- ========================================================= -->
+    <!-- PAGE 1: HOME (STREAMER, FULL-WIDTH PLAYER & 3-DOT DL)     -->
+    <!-- ========================================================= -->
     <ScrollView
-        android:id="@+id/mainScrollView"
+        android:id="@+id/pageHome"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/bottomNav"
@@ -14,7 +17,7 @@
         android:scrollbars="vertical"
         android:paddingLeft="8dp"
         android:paddingRight="8dp"
-        android:paddingTop="6dp">
+        android:paddingTop="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -22,7 +25,7 @@
             android:orientation="vertical"
             android:paddingBottom="20dp">
 
-            <!-- 1. TOP PLATFORM BAR -->
+            <!-- 1. TOP PLATFORM TABS -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="38dp"
@@ -31,48 +34,48 @@
                 android:layout_marginBottom="6dp">
 
                 <LinearLayout
-                    android:id="@+id/btnTerminalLogs"
+                    android:id="@+id/btnAllInOneHub"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="1.1"
-                    android:background="@drawable/frame_slate_pill"
+                    android:layout_weight="1.15"
+                    android:background="@drawable/chip_active"
                     android:gravity="center"
-                    android:layout_marginRight="5dp">
+                    android:layout_marginRight="4dp">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="UQ"
-                        android:textColor="#00B0FF"
+                        android:text="ALL MIX"
+                        android:textColor="#FFFFFF"
                         android:textStyle="bold"
-                        android:textSize="15sp"/>
+                        android:textSize="9.5sp"/>
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/tabYoutube"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="1.35"
-                    android:background="@drawable/frame_neon_red"
+                    android:layout_weight="1.3"
+                    android:background="@drawable/frame_slate_pill"
                     android:gravity="center"
                     android:paddingLeft="4dp"
                     android:paddingRight="4dp"
-                    android:layout_marginRight="5dp">
-                    <ImageView android:layout_width="13dp" android:layout_height="13dp" android:src="@drawable/vec_play" android:layout_marginRight="3dp"/>
-                    <TextView android:id="@+id/txtTabYt" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="YouTube" android:textColor="#FFFFFF" android:textSize="9.5sp" android:singleLine="true"/>
+                    android:layout_marginRight="4dp">
+                    <ImageView android:layout_width="12dp" android:layout_height="12dp" android:src="@drawable/vec_play" android:layout_marginRight="3dp"/>
+                    <TextView android:id="@+id/txtTabYt" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="YouTube" android:textColor="#FFFFFF" android:textSize="9sp" android:singleLine="true"/>
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/tabInsta"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="1.35"
+                    android:layout_weight="1.3"
                     android:background="@drawable/frame_slate_pill"
                     android:gravity="center"
                     android:paddingLeft="4dp"
                     android:paddingRight="4dp"
-                    android:layout_marginRight="5dp">
-                    <ImageView android:layout_width="13dp" android:layout_height="13dp" android:src="@drawable/ic_instagram" android:layout_marginRight="3dp"/>
-                    <TextView android:id="@+id/txtTabIg" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Instagram" android:textColor="#D0D8E8" android:textSize="9sp" android:singleLine="true"/>
+                    android:layout_marginRight="4dp">
+                    <ImageView android:layout_width="12dp" android:layout_height="12dp" android:src="@drawable/ic_instagram" android:layout_marginRight="3dp"/>
+                    <TextView android:id="@+id/txtTabIg" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Insta/FB" android:textColor="#D0D8E8" android:textSize="9sp" android:singleLine="true"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -84,33 +87,23 @@
                     android:gravity="center"
                     android:paddingLeft="4dp"
                     android:paddingRight="4dp"
-                    android:layout_marginRight="5dp">
-                    <ImageView android:layout_width="13dp" android:layout_height="13dp" android:src="@drawable/ic_tiktok" android:layout_marginRight="3dp"/>
-                    <TextView android:id="@+id/txtTabTk" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="TikTok" android:textColor="#D0D8E8" android:textSize="9.5sp" android:singleLine="true"/>
+                    android:layout_marginRight="4dp">
+                    <ImageView android:layout_width="12dp" android:layout_height="12dp" android:src="@drawable/ic_tiktok" android:layout_marginRight="3dp"/>
+                    <TextView android:id="@+id/txtTabTk" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="TikTok" android:textColor="#D0D8E8" android:textSize="9sp" android:singleLine="true"/>
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/tabX"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="0.9"
-                    android:background="@drawable/frame_slate_pill"
-                    android:gravity="center"
-                    android:layout_marginRight="5dp">
-                    <TextView android:id="@+id/txtTabX" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="𝕏" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/btnSettings"
-                    android:layout_width="38dp"
-                    android:layout_height="match_parent"
+                    android:layout_weight="0.85"
                     android:background="@drawable/frame_slate_pill"
                     android:gravity="center">
-                    <ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@drawable/vec_settings"/>
+                    <TextView android:id="@+id/txtTabX" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="𝕏" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- 2A. UPPER BAR: DIRECT LINK (URL) -->
+            <!-- 2A. UPPER BAR: DIRECT LINK LOAD BAR (NO DUPLICATE DOWNLOAD BUTTON) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
@@ -136,7 +129,7 @@
                         android:layout_height="match_parent"
                         android:layout_weight="1"
                         android:background="#00000000"
-                        android:hint="यहाँ सीधा वीडियो लिंक (URL) पेस्ट करें..."
+                        android:hint="Paste video URL here to play..."
                         android:textColorHint="#5C7499"
                         android:textColor="#FFFFFF"
                         android:textSize="11.5sp"
@@ -155,15 +148,21 @@
 
                 <LinearLayout
                     android:id="@+id/btnFetchVideo"
-                    android:layout_width="48dp"
+                    android:layout_width="54dp"
                     android:layout_height="match_parent"
-                    android:background="@drawable/btn_main_download"
+                    android:background="@drawable/chip_active"
                     android:gravity="center">
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/vec_download"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="LOAD"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:textSize="9.5sp"/>
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- 2B. LOWER BAR: VIDEO SEARCH BAR -->
+            <!-- 2B. LOWER BAR: KEYWORD VIDEO SEARCH BAR -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
@@ -189,7 +188,7 @@
                         android:layout_height="match_parent"
                         android:layout_weight="1"
                         android:background="#00000000"
-                        android:hint="गाना, फिल्म, गेमिंग या TikTok वीडियो सर्च करें..."
+                        android:hint="Search songs, movies, gaming, TikTok, Reels..."
                         android:textColorHint="#6C829E"
                         android:textColor="#00B0FF"
                         android:textSize="11.5sp"
@@ -208,7 +207,7 @@
 
                 <LinearLayout
                     android:id="@+id/btnSearchVideos"
-                    android:layout_width="48dp"
+                    android:layout_width="54dp"
                     android:layout_height="match_parent"
                     android:background="@drawable/chip_active"
                     android:gravity="center">
@@ -216,256 +215,173 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- 3. PLAYER & QUALITY PANEL -->
-            <LinearLayout
+            <!-- 3. FULL-SCREEN WIDTH VIDEO PLAYER (SIDE DOWNLOAD PANEL REMOVED!) -->
+            <RelativeLayout
+                android:id="@+id/playerContainerBox"
                 android:layout_width="match_parent"
-                android:layout_height="232dp"
-                android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
+                android:layout_height="215dp"
+                android:background="@drawable/frame_neon_blue"
+                android:padding="2dp"
+                android:layout_marginBottom="6dp">
 
-                <!-- Left: Native Video Player -->
-                <LinearLayout
-                    android:layout_width="0dp"
+                <VideoView
+                    android:id="@+id/realVideoView"
+                    android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_weight="1.85"
-                    android:orientation="vertical"
-                    android:layout_marginRight="7dp">
+                    android:layout_centerInParent="true" />
 
-                    <RelativeLayout
-                        android:id="@+id/playerContainerBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/frame_neon_blue"
-                        android:padding="2dp"
-                        android:layout_marginBottom="6dp">
+                <ImageView
+                    android:id="@+id/ivPlayerPreview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop" />
 
-                        <VideoView
-                            android:id="@+id/realVideoView"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:layout_centerInParent="true" />
+                <TextView
+                    android:id="@+id/tvQualityBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="READY"
+                    android:textColor="#00E5FF"
+                    android:textSize="8sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/frame_icon_slot"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingBottom="3dp"
+                    android:layout_margin="8dp"/>
 
-                        <ImageView
-                            android:id="@+id/ivPlayerPreview"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:scaleType="centerCrop" />
-
-                        <TextView
-                            android:id="@+id/tvQualityBadge"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="READY"
-                            android:textColor="#00E5FF"
-                            android:textSize="8sp"
-                            android:textStyle="bold"
-                            android:gravity="center"
-                            android:background="@drawable/frame_icon_slot"
-                            android:paddingLeft="6dp"
-                            android:paddingRight="6dp"
-                            android:paddingTop="2dp"
-                            android:paddingBottom="2dp"
-                            android:layout_margin="6dp"/>
-
-                        <LinearLayout
-                            android:id="@+id/btnCenterPlay"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:background="@drawable/circle_play_bg"
-                            android:gravity="center"
-                            android:layout_centerInParent="true">
-                            <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/vec_play" android:layout_marginLeft="2dp"/>
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:id="@+id/playerBottomBar"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentBottom="true"
-                            android:background="#AA03060C"
-                            android:gravity="center_vertical"
-                            android:paddingLeft="6dp"
-                            android:paddingRight="6dp"
-                            android:paddingTop="2dp"
-                            android:paddingBottom="3dp">
-
-                            <TextView
-                                android:id="@+id/tvCurrentTime"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="00:00"
-                                android:textColor="#FFFFFF"
-                                android:textSize="8sp"/>
-
-                            <SeekBar
-                                android:id="@+id/playerSeekBar"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:max="100"
-                                android:progress="0"/>
-
-                            <TextView
-                                android:id="@+id/tvTotalTime"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="00:00"
-                                android:textColor="#00E5FF"
-                                android:textSize="8sp"
-                                android:layout_marginRight="6dp"/>
-
-                            <ImageView
-                                android:id="@+id/btnFullscreen"
-                                android:layout_width="14dp"
-                                android:layout_height="14dp"
-                                android:src="@drawable/vec_fullscreen"/>
-                        </LinearLayout>
-                    </RelativeLayout>
-
-                    <!-- 6 Action Buttons -->
-                    <LinearLayout
-                        android:id="@+id/boxActionButtons"
-                        android:layout_width="match_parent"
-                        android:layout_height="42dp"
-                        android:background="@drawable/frame_slate_pill"
-                        android:orientation="horizontal"
-                        android:gravity="center"
-                        android:paddingLeft="4dp"
-                        android:paddingRight="4dp">
-
-                        <LinearLayout android:id="@+id/actPlay" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                            <LinearLayout android:layout_width="22dp" android:layout_height="22dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
-                                <ImageView android:layout_width="13dp" android:layout_height="13dp" android:src="@drawable/vec_play"/>
-                            </LinearLayout>
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Play" android:textColor="#2196F3" android:textSize="7sp" android:layout_marginTop="1dp"/>
-                        </LinearLayout>
-
-                        <LinearLayout android:id="@+id/actDownload" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                            <LinearLayout android:layout_width="22dp" android:layout_height="22dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
-                                <ImageView android:layout_width="13dp" android:layout_height="13dp" android:src="@drawable/vec_download"/>
-                            </LinearLayout>
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Download" android:textColor="#2196F3" android:textSize="7sp" android:layout_marginTop="1dp"/>
-                        </LinearLayout>
-
-                        <LinearLayout android:id="@+id/actSave" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                            <LinearLayout android:layout_width="22dp" android:layout_height="22dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
-                                <ImageView android:layout_width="12dp" android:layout_height="12dp" android:src="@drawable/vec_save"/>
-                            </LinearLayout>
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Save" android:textColor="#2196F3" android:textSize="7sp" android:layout_marginTop="1dp"/>
-                        </LinearLayout>
-
-                        <LinearLayout android:id="@+id/actShare" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                            <LinearLayout android:layout_width="22dp" android:layout_height="22dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
-                                <ImageView android:layout_width="13dp" android:layout_height="13dp" android:src="@drawable/vec_share"/>
-                            </LinearLayout>
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Share" android:textColor="#2196F3" android:textSize="7sp" android:layout_marginTop="1dp"/>
-                        </LinearLayout>
-
-                        <LinearLayout android:id="@+id/actPlaylist" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                            <LinearLayout android:layout_width="22dp" android:layout_height="22dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
-                                <ImageView android:layout_width="13dp" android:layout_height="13dp" android:src="@drawable/vec_playlist"/>
-                            </LinearLayout>
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Playlist" android:textColor="#2196F3" android:textSize="7sp" android:layout_marginTop="1dp"/>
-                        </LinearLayout>
-
-                        <LinearLayout android:id="@+id/actPip" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                            <LinearLayout android:layout_width="22dp" android:layout_height="22dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
-                                <ImageView android:layout_width="12dp" android:layout_height="12dp" android:src="@drawable/vec_pip"/>
-                            </LinearLayout>
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PIP" android:textColor="#2196F3" android:textSize="7sp" android:layout_marginTop="1dp"/>
-                        </LinearLayout>
-                    </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/btnCenterPlay"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:background="@drawable/circle_play_bg"
+                    android:gravity="center"
+                    android:layout_centerInParent="true">
+                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/vec_play" android:layout_marginLeft="2dp"/>
                 </LinearLayout>
 
-                <!-- Right: Quality Download Panel -->
                 <LinearLayout
-                    android:id="@+id/boxQualityPanel"
+                    android:id="@+id/playerBottomBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentBottom="true"
+                    android:background="#CC03060C"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp">
+
+                    <TextView
+                        android:id="@+id/tvCurrentTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="00:00"
+                        android:textColor="#FFFFFF"
+                        android:textSize="9sp"/>
+
+                    <SeekBar
+                        android:id="@+id/playerSeekBar"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:max="100"
+                        android:progress="0"/>
+
+                    <TextView
+                        android:id="@+id/tvTotalTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="00:00"
+                        android:textColor="#00E5FF"
+                        android:textSize="9sp"
+                        android:layout_marginRight="8dp"/>
+
+                    <ImageView
+                        android:id="@+id/btnFullscreen"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/vec_fullscreen"/>
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- 4. PLAYER ACTION BAR WITH DOWNLOAD + 3-DOT (⋮) FORMAT/QUALITY MENU -->
+            <LinearLayout
+                android:id="@+id/boxActionButtons"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:background="@drawable/frame_slate_pill"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingLeft="6dp"
+                android:paddingRight="6dp"
+                android:layout_marginBottom="8dp">
+
+                <LinearLayout android:id="@+id/actPlay" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <LinearLayout android:layout_width="24dp" android:layout_height="24dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
+                        <ImageView android:layout_width="13dp" android:layout_height="13dp" android:src="@drawable/vec_play"/>
+                    </LinearLayout>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Play/Pause" android:textColor="#2196F3" android:textSize="7sp" android:layout_marginTop="1dp"/>
+                </LinearLayout>
+
+                <!-- Main Download Button + 3-Dot (⋮) Format & Quality Selector right next to it -->
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="1.05"
-                    android:background="@drawable/frame_download_panel"
-                    android:orientation="vertical"
-                    android:padding="6dp">
+                    android:layout_weight="1.55"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:background="@drawable/frame_icon_slot"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:paddingLeft="6dp"
+                    android:paddingRight="4dp">
 
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="20dp" android:gravity="center_vertical" android:layout_marginBottom="4dp">
-                        <ImageView android:layout_width="13dp" android:layout_height="13dp" android:src="@drawable/vec_download" android:layout_marginRight="4dp"/>
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Download" android:textColor="#00B0FF" android:textSize="10sp" android:textStyle="bold"/>
+                    <LinearLayout
+                        android:id="@+id/actDownload"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+                        <ImageView android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/vec_download" android:layout_marginRight="4dp"/>
+                        <TextView android:id="@+id/tvSelectedFormatBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Download" android:textColor="#00E5FF" android:textStyle="bold" android:textSize="8.5sp"/>
                     </LinearLayout>
 
-                    <LinearLayout android:id="@+id/dl4k" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical" android:background="#0B1324" android:paddingLeft="4dp" android:paddingRight="4dp" android:layout_marginBottom="3dp">
-                        <LinearLayout android:layout_width="18dp" android:layout_height="18dp" android:background="@drawable/frame_icon_slot" android:gravity="center" android:layout_marginRight="5dp">
-                            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:src="@drawable/vec_play"/>
-                        </LinearLayout>
-                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="4K 2160p" android:textColor="#FFFFFF" android:textSize="8sp" android:textStyle="bold"/>
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MP4 • Ultra HD" android:textColor="#80B3FF" android:textSize="6.5sp"/>
-                        </LinearLayout>
-                        <ImageView android:layout_width="12dp" android:layout_height="12dp" android:src="@drawable/vec_download"/>
-                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/btnDownloadThreeDots"
+                        android:layout_width="28dp"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="⋮"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:textSize="16sp"
+                        android:background="@drawable/chip_active"/>
+                </LinearLayout>
 
-                    <LinearLayout android:id="@+id/dl1080p" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical" android:background="#0B1324" android:paddingLeft="4dp" android:paddingRight="4dp" android:layout_marginBottom="3dp">
-                        <LinearLayout android:layout_width="18dp" android:layout_height="18dp" android:background="@drawable/frame_icon_slot" android:gravity="center" android:layout_marginRight="5dp">
-                            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:src="@drawable/vec_play"/>
-                        </LinearLayout>
-                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1080p" android:textColor="#FFFFFF" android:textSize="8sp" android:textStyle="bold"/>
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MP4 • Full HD" android:textColor="#80B3FF" android:textSize="6.5sp"/>
-                        </LinearLayout>
-                        <ImageView android:layout_width="12dp" android:layout_height="12dp" android:src="@drawable/vec_download"/>
+                <LinearLayout android:id="@+id/actShare" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <LinearLayout android:layout_width="24dp" android:layout_height="24dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
+                        <ImageView android:layout_width="13dp" android:layout_height="13dp" android:src="@drawable/vec_share"/>
                     </LinearLayout>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Share" android:textColor="#2196F3" android:textSize="7sp" android:layout_marginTop="1dp"/>
+                </LinearLayout>
 
-                    <LinearLayout android:id="@+id/dl720p" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical" android:background="#0B1324" android:paddingLeft="4dp" android:paddingRight="4dp" android:layout_marginBottom="3dp">
-                        <LinearLayout android:layout_width="18dp" android:layout_height="18dp" android:background="@drawable/frame_icon_slot" android:gravity="center" android:layout_marginRight="5dp">
-                            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:src="@drawable/vec_play"/>
-                        </LinearLayout>
-                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="720p" android:textColor="#FFFFFF" android:textSize="8sp" android:textStyle="bold"/>
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MP4 • HD" android:textColor="#80B3FF" android:textSize="6.5sp"/>
-                        </LinearLayout>
-                        <ImageView android:layout_width="12dp" android:layout_height="12dp" android:src="@drawable/vec_download"/>
+                <LinearLayout android:id="@+id/actPip" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <LinearLayout android:layout_width="24dp" android:layout_height="24dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
+                        <ImageView android:layout_width="12dp" android:layout_height="12dp" android:src="@drawable/vec_pip"/>
                     </LinearLayout>
-
-                    <LinearLayout android:id="@+id/dl480p" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical" android:background="#0B1324" android:paddingLeft="4dp" android:paddingRight="4dp" android:layout_marginBottom="3dp">
-                        <LinearLayout android:layout_width="18dp" android:layout_height="18dp" android:background="@drawable/frame_icon_slot" android:gravity="center" android:layout_marginRight="5dp">
-                            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:src="@drawable/vec_play"/>
-                        </LinearLayout>
-                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="480p" android:textColor="#FFFFFF" android:textSize="8sp" android:textStyle="bold"/>
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MP4 • Standard" android:textColor="#80B3FF" android:textSize="6.5sp"/>
-                        </LinearLayout>
-                        <ImageView android:layout_width="12dp" android:layout_height="12dp" android:src="@drawable/vec_download"/>
-                    </LinearLayout>
-
-                    <LinearLayout android:id="@+id/dl360p" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical" android:background="#0B1324" android:paddingLeft="4dp" android:paddingRight="4dp" android:layout_marginBottom="3dp">
-                        <LinearLayout android:layout_width="18dp" android:layout_height="18dp" android:background="@drawable/frame_icon_slot" android:gravity="center" android:layout_marginRight="5dp">
-                            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:src="@drawable/vec_play"/>
-                        </LinearLayout>
-                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="360p" android:textColor="#FFFFFF" android:textSize="8sp" android:textStyle="bold"/>
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MP4 • Saver" android:textColor="#80B3FF" android:textSize="6.5sp"/>
-                        </LinearLayout>
-                        <ImageView android:layout_width="12dp" android:layout_height="12dp" android:src="@drawable/vec_download"/>
-                    </LinearLayout>
-
-                    <LinearLayout android:id="@+id/dlMp3" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical" android:background="#140D26" android:paddingLeft="4dp" android:paddingRight="4dp">
-                        <LinearLayout android:layout_width="18dp" android:layout_height="18dp" android:background="@drawable/frame_icon_slot" android:gravity="center" android:layout_marginRight="5dp">
-                            <ImageView android:layout_width="11dp" android:layout_height="11dp" android:src="@drawable/vec_music"/>
-                        </LinearLayout>
-                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Audio (MP3)" android:textColor="#80E5FF" android:textSize="8sp" android:textStyle="bold"/>
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="320kbps • Audio" android:textColor="#B388FF" android:textSize="6.5sp"/>
-                        </LinearLayout>
-                        <ImageView android:layout_width="12dp" android:layout_height="12dp" android:src="@drawable/vec_download"/>
-                    </LinearLayout>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PIP Mode" android:textColor="#2196F3" android:textSize="7sp" android:layout_marginTop="1dp"/>
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- 4. ACTIVE VIDEO INFO BAR -->
+            <!-- 5. ACTIVE VIDEO INFO & SPEED BAR -->
             <LinearLayout
                 android:id="@+id/boxInfoBar"
                 android:layout_width="match_parent"
-                android:layout_height="42dp"
+                android:layout_height="44dp"
                 android:background="@drawable/frame_slate_pill"
                 android:gravity="center_vertical"
                 android:paddingLeft="8dp"
@@ -478,7 +394,7 @@
                     android:background="@drawable/circle_avatar"
                     android:gravity="center"
                     android:layout_marginRight="8dp">
-                    <TextView android:id="@+id/tvPlatformBadge" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="YT" android:textColor="#00B0FF" android:textSize="8.5sp" android:textStyle="bold"/>
+                    <TextView android:id="@+id/tvPlatformBadge" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MIX" android:textColor="#00B0FF" android:textSize="8sp" android:textStyle="bold"/>
                 </LinearLayout>
 
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
@@ -486,7 +402,7 @@
                         android:id="@+id/tvActiveTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="किसी भी वीडियो कार्ड पर टैप करें (अनलिमिटेड स्क्रॉल चालू है)"
+                        android:text="Tap any video below to stream or download"
                         android:textColor="#FFFFFF"
                         android:textSize="10sp"
                         android:textStyle="bold"
@@ -495,44 +411,66 @@
                         android:id="@+id/tvActiveSub"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="तैयार है • चलाने के लिए वीडियो चुनें या डाउनलोड दबाएं"
+                        android:text="Tap ⋮ next to Download to choose Video/Audio format"
                         android:textColor="#00B0FF"
                         android:textSize="8sp"
                         android:singleLine="true"/>
                 </LinearLayout>
 
                 <TextView
-                    android:id="@+id/btnSubscribe"
-                    android:layout_width="64dp"
-                    android:layout_height="25dp"
+                    android:id="@+id/btnMediaPrev"
+                    android:layout_width="28dp"
+                    android:layout_height="26dp"
+                    android:background="@drawable/frame_icon_slot"
+                    android:text="⏮"
+                    android:textColor="#00E5FF"
+                    android:textSize="10sp"
+                    android:gravity="center"
+                    android:layout_marginRight="4dp"/>
+
+                <TextView
+                    android:id="@+id/btnMediaNext"
+                    android:layout_width="28dp"
+                    android:layout_height="26dp"
+                    android:background="@drawable/frame_icon_slot"
+                    android:text="⏭"
+                    android:textColor="#00E5FF"
+                    android:textSize="10sp"
+                    android:gravity="center"
+                    android:layout_marginRight="4dp"/>
+
+                <TextView
+                    android:id="@+id/btnSpeedControl"
+                    android:layout_width="42dp"
+                    android:layout_height="26dp"
                     android:background="@drawable/btn_subscribe"
-                    android:text="Status"
+                    android:text="1.0x"
                     android:textColor="#FFFFFF"
-                    android:textSize="9sp"
+                    android:textSize="8.5sp"
                     android:textStyle="bold"
                     android:gravity="center"/>
             </LinearLayout>
 
-            <!-- 5. CATEGORY CHIPS -->
+            <!-- 6. CATEGORY CHIPS -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="26dp"
                 android:orientation="horizontal"
                 android:layout_marginBottom="8dp">
 
-                <TextView android:id="@+id/chipRec" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.45" android:background="@drawable/chip_active" android:text="Recommended" android:textColor="#FFFFFF" android:textSize="8.5sp" android:textStyle="bold" android:gravity="center" android:singleLine="true" android:layout_marginRight="4dp"/>
+                <TextView android:id="@+id/chipRec" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.35" android:background="@drawable/chip_active" android:text="All Mixed" android:textColor="#FFFFFF" android:textSize="8.5sp" android:textStyle="bold" android:gravity="center" android:singleLine="true" android:layout_marginRight="4dp"/>
                 <TextView android:id="@+id/chipTrend" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@drawable/chip_inactive" android:text="Trending" android:textColor="#2196F3" android:textSize="8.5sp" android:gravity="center" android:singleLine="true" android:layout_marginRight="4dp"/>
                 <TextView android:id="@+id/chipMusic" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.85" android:background="@drawable/chip_inactive" android:text="Music" android:textColor="#2196F3" android:textSize="8.5sp" android:gravity="center" android:singleLine="true" android:layout_marginRight="4dp"/>
                 <TextView android:id="@+id/chipGaming" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.95" android:background="@drawable/chip_inactive" android:text="Gaming" android:textColor="#2196F3" android:textSize="8.5sp" android:gravity="center" android:singleLine="true" android:layout_marginRight="4dp"/>
                 <TextView android:id="@+id/chipNews" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.85" android:background="@drawable/chip_inactive" android:text="News" android:textColor="#2196F3" android:textSize="8.5sp" android:gravity="center" android:singleLine="true" android:layout_marginRight="4dp"/>
-                <TextView android:id="@+id/chipShorts" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.85" android:background="@drawable/chip_inactive" android:text="Shorts" android:textColor="#2196F3" android:textSize="8.5sp" android:gravity="center" android:singleLine="true"/>
+                <TextView android:id="@+id/chipShorts" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.95" android:background="@drawable/chip_inactive" android:text="Reels/TikTok" android:textColor="#2196F3" android:textSize="8.5sp" android:gravity="center" android:singleLine="true"/>
             </LinearLayout>
 
-            <!-- 6. INFINITE LOOP ROW 1 (जितना आगे स्क्रॉल करेंगे, लूप में नए कार्ड्स जुड़ते जाएंगे) -->
+            <!-- 7. INFINITE LOOP ROW 1 -->
             <HorizontalScrollView
                 android:id="@+id/hsvRow1"
                 android:layout_width="match_parent"
-                android:layout_height="104dp"
+                android:layout_height="108dp"
                 android:scrollbars="none"
                 android:layout_marginBottom="8dp">
 
@@ -543,13 +481,13 @@
                     android:orientation="horizontal" />
             </HorizontalScrollView>
 
-            <!-- 7. INFINITE LOOP ROW 2 (दूसरी अनलिमिटेड लूप लाइन) -->
+            <!-- 8. INFINITE LOOP ROW 2 -->
             <HorizontalScrollView
                 android:id="@+id/hsvRow2"
                 android:layout_width="match_parent"
-                android:layout_height="104dp"
+                android:layout_height="108dp"
                 android:scrollbars="none"
-                android:layout_marginBottom="8dp">
+                android:layout_marginBottom="4dp">
 
                 <LinearLayout
                     android:id="@+id/row2Container"
@@ -558,33 +496,131 @@
                     android:orientation="horizontal" />
             </HorizontalScrollView>
 
-            <!-- 8. EASY TO UNDERSTAND STATUS BOX -->
-            <TextView
-                android:id="@+id/tvLogHeader"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="ऐप की स्थिति (Easy Live Status) ❯"
-                android:textColor="#00B0FF"
-                android:textSize="10sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="4dp"/>
-
-            <TextView
-                android:id="@+id/tvConsoleBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="70dp"
-                android:background="@drawable/frame_neon_blue"
-                android:padding="8dp"
-                android:fontFamily="monospace"
-                android:text="✅ ऐप तैयार है। दाईं तरफ अनलिमिटेड स्क्रॉल करें या किसी भी वीडियो पर टैप करें।\n"
-                android:textColor="#00C853"
-                android:textSize="9sp"/>
-
         </LinearLayout>
     </ScrollView>
 
-    <!-- 9. BOTTOM NAVIGATION BAR -->
+    <!-- ========================================================= -->
+    <!-- PAGE 2: DEDICATED DOWNLOADS MANAGER PAGE                  -->
+    <!-- ========================================================= -->
+    <LinearLayout
+        android:id="@+id/pageDownloads"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/bottomNav"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:background="@drawable/frame_slate_pill"
+            android:gravity="center_vertical"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:layout_marginBottom="10dp">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="⬇ NEXORA Downloads Manager"
+                android:textColor="#00E5FF"
+                android:textSize="13sp"
+                android:textStyle="bold"/>
+            <TextView
+                android:id="@+id/tvActiveDownloadStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Idle"
+                android:textColor="#00C853"
+                android:textSize="10sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <LinearLayout
+                android:id="@+id/downloadsListContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </ScrollView>
+    </LinearLayout>
+
+    <!-- ========================================================= -->
+    <!-- PAGE 3: MX PLAYER / PHONE GALLERY PAGE (ALL PHONE VIDEOS) -->
+    <!-- ========================================================= -->
+    <LinearLayout
+        android:id="@+id/pageGallery"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/bottomNav"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:background="@drawable/frame_slate_pill"
+            android:gravity="center_vertical"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:layout_marginBottom="10dp">
+            <TextView
+                android:id="@+id/tvGalleryHeader"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="🎬 Phone Video Gallery (MX Style)"
+                android:textColor="#00E5FF"
+                android:textSize="13sp"
+                android:textStyle="bold"/>
+            <TextView
+                android:id="@+id/btnRescanGallery"
+                android:layout_width="wrap_content"
+                android:layout_height="26dp"
+                android:background="@drawable/chip_active"
+                android:gravity="center"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:text="🔄 Scan Phone"
+                android:textColor="#FFFFFF"
+                android:textSize="9.5sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <LinearLayout
+                android:id="@+id/galleryListContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </ScrollView>
+    </LinearLayout>
+
+    <!-- ========================================================= -->
+    <!-- PAGE 4: DEDICATED FULL-SCREEN SETTINGS PAGE               -->
+    <!-- ========================================================= -->
+    <ScrollView
+        android:id="@+id/pageSettings"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/bottomNav"
+        android:padding="12dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/settingsContentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
+    <!-- 9. BOTTOM NAVIGATION BAR (SWITCHES BETWEEN THE 4 PAGES) -->
     <LinearLayout
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
@@ -598,38 +634,38 @@
         android:layout_marginBottom="6dp">
 
         <LinearLayout android:id="@+id/navHome" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-            <LinearLayout android:layout_width="26dp" android:layout_height="26dp" android:background="@drawable/frame_icon_active" android:gravity="center">
+            <LinearLayout android:id="@+id/navIconHome" android:layout_width="26dp" android:layout_height="26dp" android:background="@drawable/frame_icon_active" android:gravity="center">
                 <ImageView android:layout_width="15dp" android:layout_height="15dp" android:src="@drawable/vec_home"/>
             </LinearLayout>
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Home" android:textColor="#00B0FF" android:textSize="7.5sp" android:layout_marginTop="2dp"/>
         </LinearLayout>
 
         <LinearLayout android:id="@+id/navSearch" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-            <LinearLayout android:layout_width="26dp" android:layout_height="26dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
+            <LinearLayout android:id="@+id/navIconSearch" android:layout_width="26dp" android:layout_height="26dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
                 <ImageView android:layout_width="15dp" android:layout_height="15dp" android:src="@drawable/vec_search"/>
             </LinearLayout>
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Search" android:textColor="#2196F3" android:textSize="7.5sp" android:layout_marginTop="2dp"/>
         </LinearLayout>
 
         <LinearLayout android:id="@+id/navDownloads" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-            <LinearLayout android:layout_width="26dp" android:layout_height="26dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
+            <LinearLayout android:id="@+id/navIconDownloads" android:layout_width="26dp" android:layout_height="26dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
                 <ImageView android:layout_width="15dp" android:layout_height="15dp" android:src="@drawable/vec_download"/>
             </LinearLayout>
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Downloads" android:textColor="#2196F3" android:textSize="7.5sp" android:layout_marginTop="2dp"/>
         </LinearLayout>
 
         <LinearLayout android:id="@+id/navMyVideos" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-            <LinearLayout android:layout_width="26dp" android:layout_height="26dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
-                <ImageView android:layout_width="15dp" android:layout_height="15dp" android:src="@drawable/vec_play"/>
+            <LinearLayout android:id="@+id/navIconGallery" android:layout_width="26dp" android:layout_height="26dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
+                <ImageView android:layout_width="15dp" android:layout_height="15dp" android:src="@drawable/vec_folder"/>
             </LinearLayout>
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="My Videos" android:textColor="#2196F3" android:textSize="7.5sp" android:layout_marginTop="2dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Gallery" android:textColor="#2196F3" android:textSize="7.5sp" android:layout_marginTop="2dp"/>
         </LinearLayout>
 
         <LinearLayout android:id="@+id/navLibrary" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-            <LinearLayout android:layout_width="26dp" android:layout_height="26dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
-                <ImageView android:layout_width="15dp" android:layout_height="15dp" android:src="@drawable/vec_folder"/>
+            <LinearLayout android:id="@+id/navIconSettings" android:layout_width="26dp" android:layout_height="26dp" android:background="@drawable/frame_icon_slot" android:gravity="center">
+                <ImageView android:layout_width="15dp" android:layout_height="15dp" android:src="@drawable/vec_settings"/>
             </LinearLayout>
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Library" android:textColor="#2196F3" android:textSize="7.5sp" android:layout_marginTop="2dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Settings" android:textColor="#2196F3" android:textSize="7.5sp" android:layout_marginTop="2dp"/>
         </LinearLayout>
     </LinearLayout>
 

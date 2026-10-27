@@ -1,49 +1,32 @@
 package com.lion.downloader;
 
+import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.TextView;
-import android.widget.Button;
+import java.util.ArrayList;
 
 public class MainActivity extends Activity {
-    String[] languages = {"English", "中文 (Chinese)", "हिन्दी (Hindi)", "Español", "Français", "Deutsch"};
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
-        final TextView langSelector = findViewById(R.id.langSelector);
-        Button btnGetStarted = findViewById(R.id.btnGetStarted);
-        
-        langSelector.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("Select Language");
-                builder.setItems(languages, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        String selected = languages[which].split(" ")[0];
-                        langSelector.setText("🌐 " + selected + " ﹀");
-                    }
-                });
-                builder.show();
-            }
-        });
+        // चेक करें कि यूजर ने पहले टिक करके लॉगिन/स्टार्ट किया है या नहीं
+        SharedPreferences prefs = getSharedPreferences("nexora_permanent_auth", MODE_PRIVATE);
+        boolean isAccepted = prefs.getBoolean("boxes_ticked_and_started", false);
 
-        btnGetStarted.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, PolicyActivity.class);
-                startActivity(intent);
-                // फेड एनिमेशन
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-            }
-        });
+        if (isAccepted) {
+            // अगर एक बार टिक हो चुका है, तो सीधे DashboardActivity खोलें (जब तक ऐप रीसेट न हो)
+            startActivity(new Intent(this, DashboardActivity.class));
+            finish();
+            return;
+        }
+
+        // पहली बार खुलने पर पॉलिसी/स्टार्ट पेज पर भेजें
+        startActivity(new Intent(this, PolicyActivity.class));
+        finish();
     }
 }
