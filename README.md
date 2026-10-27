@@ -1,16 +1,21 @@
-# 🚀 NEXORA - Multi-Engine Android Video Streamer & Downloader (`Yt`)
+# 🚀 NEXORA - Universal Video Downloader & Streamer
 
-**NEXORA** is a custom-built Android video streaming and downloading application compiled natively via Termux toolchains.
+**NEXORA** ek powerful, ad-free, aur 100% Open Source Android application hai. Yeh app Termux ke native backend (yt-dlp + FFmpeg) aur Android ke native GPU hardware decoder ka use karke multiple platforms se videos ko stream aur download karta hai.
 
-## ✨ Key Features
-- **Dual Search Architecture:** Separate Direct Link (URL) bar and Server Keyword Search bar.
-- **Multi-Platform Support:** YouTube, TikTok, Instagram Reels, and X video feeds.
-- **Infinite Loop Horizontal Scrolling:** Memory-safe infinite card recycling without filling device storage.
-- **Auto Day/Night Theme:** Automatically syncs with Android system Dark Mode and Light (White) Mode.
-- **Native Playback & Gallery Sync:** Direct stream playback in `VideoView` and instant gallery indexing via `MediaScannerConnection`.
+## 🌟 Key Features
+- **Dual Engine Architecture**: Frontend UI ke liye Native Android aur backend processing ke liye Termux Core Engine.
+- **Multi-Platform Support**: YouTube, TikTok, Instagram Reels, aur X (Twitter) se direct video fetch aur download.
+- **Live GPU Streaming**: Bina video download kiye direct YouTube/TikTok server se HD streaming (Native VideoView).
+- **Infinite Scrolling**: Memory-safe loop recycler jo bina RAM ya storage bhare unlimited videos dikhata hai.
+- **Auto Dark/Light Theme**: Phone ke system UI ke hisaab se app ka color aur background auto-adjust hota hai.
+- **Direct Gallery Sync**: Background downloader videos ko seedhe `/Download/NEXORA` mein save karta hai aur `MediaScanner` ke zariye instantly phone gallery mein bhejta hai.
+- **No Third-Party App Required**: YouTube app ya browser ki koi zaroorat nahi.
 
-## 🛠️ Project Structure
-- `AndroidManifest.xml` — App permissions, DayNight theme & hardware acceleration config.
-- `src/main/java/com/lion/downloader/` — Core Java activities & multi-library engine logic.
-- `res/` — Custom XML layouts, vector icons, and neon/light UI drawables.
-- `bin/NEXORA_App.apk` — Signed installable Android package.
+## 🛠️ Architecture & Libraries
+- **Language:** Java (Native Android SDK)
+- **Downloader Core:** yt-dlp & FFmpeg (Linux ARM64 Standalone Binaries)
+- **Streaming:** Android HardwareCodec (C++ GPU Decoder)
+- **APIs:** Piped API (YouTube Raw Streams) & TikWM API (TikTok/Insta Streams)
+
+## 🤝 Open Source
+This project is open-source and free to use, modify, and distribute. Developed by **lion36508**.
