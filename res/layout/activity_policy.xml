@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#050510">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/policy_banner"
+        android:scaleType="centerCrop" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#DD000000" /> <!-- डार्क ओवरले ताकि टेक्स्ट साफ दिखे -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Unlock Your Experience"
+            android:textColor="#FFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="10dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="To ensure a secure and legal downloading environment, please review and accept our terms."
+            android:textColor="#AAAAAA"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:layout_marginBottom="40dp"/>
+
+        <CheckBox
+            android:id="@+id/chkTerms"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="I agree to the Terms of Service &amp; EULA"
+            android:textColor="#FFFFFF"
+            android:buttonTint="#007BFF"
+            android:layout_marginBottom="10dp"/>
+
+        <CheckBox
+            android:id="@+id/chkPrivacy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="I agree to the Privacy Policy &amp; Data Handling"
+            android:textColor="#FFFFFF"
+            android:buttonTint="#007BFF"
+            android:layout_marginBottom="20dp"/>
+
+        <Button
+            android:id="@+id/btnReadPolicy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ℹ️ Read Full Policies"
+            android:textColor="#007BFF"
+            android:background="@android:color/transparent"
+            android:textAllCaps="false"
+            android:layout_marginBottom="30dp"/>
+
+        <Button
+            android:id="@+id/btnContinue"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Continue  ➔"
+            android:textColor="#888888"
+            android:background="@drawable/btn_bg"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:enabled="false"
+            android:textAllCaps="false"/>
+    </LinearLayout>
+</RelativeLayout>

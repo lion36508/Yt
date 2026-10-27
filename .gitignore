@@ -1,0 +1,4 @@
+obj/
+bin/unsigned.apk
+bin/*.dex
+*.patch

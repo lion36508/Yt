@@ -1,0 +1,3 @@
+#!/system/bin/sh
+echo "[FAST ENGINE] URL: $1"
+echo "[STATUS] Ready for YT-DLP Extraction in next update!"
