@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.app.PictureInPictureParams;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -55,6 +56,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -101,6 +103,7 @@ public class DashboardActivity extends Activity {
     private int selectedPoolIndex = 0;
     private Handler timerHandler = new Handler(Looper.getMainLooper());
     private boolean isNativeVideoPrepared = false;
+    private volatile boolean activityDestroyed = false;
 
     // Feed Pool
     private String[] poolIds = new String[POOL_SIZE];
@@ -724,6 +727,13 @@ public class DashboardActivity extends Activity {
 
 private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
         try {
+            if (mp4UrlOrPath == null || !mp4UrlOrPath.toLowerCase(java.util.Locale.US).startsWith("https://")) {
+                tvQualityBadge.setText("UNSAFE URL");
+                tvActiveSub.setText("Only HTTPS direct media URLs are supported.");
+                return;
+            }
+            if (realVideoView.isPlaying()) realVideoView.stopPlayback();
+            isNativeVideoPrepared = false;
             btnCenterPlay.setVisibility(View.GONE);
             realVideoView.setVisibility(View.VISIBLE);
             realVideoView.setVideoURI(Uri.parse(mp4UrlOrPath));
@@ -764,12 +774,18 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
             realVideoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
                 @Override
                 public boolean onError(MediaPlayer mp, int what, int extra) {
-                    // If stream needs fresh token, resolve via Stage 3
-                    tvQualityBadge.setText("BUFFERING...");
+                    isNativeVideoPrepared = false;
+                    tvQualityBadge.setText("PLAYBACK ERROR");
+                    tvActiveSub.setText("MediaPlayer error " + what + "/" + extra + ". The direct URL may be expired or unsupported.");
+                    try { mp.reset(); } catch (Exception ignored) {}
                     return true;
                 }
             });
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            isNativeVideoPrepared = false;
+            tvQualityBadge.setText("PLAYBACK ERROR");
+            tvActiveSub.setText("Playback failed: " + e.getMessage());
+        }
     }
 
     private void startTimerLoop() {
@@ -819,6 +835,46 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
         return value.contains("youtube.com/") || value.contains("youtu.be/");
     }
 
+    private boolean isSafeDirectMediaUrl(String value) {
+        try {
+            URL parsed = new URL(value);
+            if (!"https".equalsIgnoreCase(parsed.getProtocol()) || parsed.getHost() == null || parsed.getHost().isEmpty()) return false;
+            if (parsed.getUserInfo() != null) return false;
+            String host = parsed.getHost().toLowerCase(java.util.Locale.US);
+            if ("localhost".equals(host) || host.endsWith(".localhost") || host.equals("0.0.0.0") || host.equals("::1")) return false;
+            InetAddress[] addresses = InetAddress.getAllByName(host);
+            for (InetAddress address : addresses) {
+                if (address.isAnyLocalAddress() || address.isLoopbackAddress() || address.isLinkLocalAddress() || address.isSiteLocalAddress()) return false;
+            }
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private HttpURLConnection openValidatedConnection(String initialUrl) throws Exception {
+        String nextUrl = initialUrl;
+        for (int redirect = 0; redirect < 5; redirect++) {
+            if (!isSafeDirectMediaUrl(nextUrl)) throw new java.io.IOException("Only safe HTTPS media URLs are supported");
+            HttpURLConnection connection = (HttpURLConnection) new URL(nextUrl).openConnection();
+            connection.setRequestProperty("User-Agent", "NEXORA/16 Android");
+            connection.setInstanceFollowRedirects(false);
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(15000);
+            connection.connect();
+            int code = connection.getResponseCode();
+            if (code >= 300 && code < 400) {
+                String location = connection.getHeaderField("Location");
+                connection.disconnect();
+                if (location == null || location.isEmpty()) throw new java.io.IOException("Redirect without destination");
+                nextUrl = new URL(new URL(nextUrl), location).toString();
+                continue;
+            }
+            return connection;
+        }
+        throw new java.io.IOException("Too many redirects");
+    }
+
     private void executeDirectHttpFileDownload(final String streamUrl, final String fmtLabel, final String fmtExt) {
         String cleanTitle = (currentTitle == null || currentTitle.isEmpty() ? "NEXORA_Media" : currentTitle).replaceAll("[^a-zA-Z0-9_-]", "_");
         if (cleanTitle.length() > 30) cleanTitle = cleanTitle.substring(0, 30);
@@ -832,29 +888,43 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                File partialFile = null;
+                Uri pendingUri = null;
+                HttpURLConnection conn = null;
+                OutputStream output = null;
                 try {
-                    if (!streamUrl.startsWith("https://") && !streamUrl.startsWith("http://")) {
-                        throw new java.io.IOException("Only HTTP(S) media URLs are supported");
-                    }
-                    File nexoraDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "NEXORA");
-                    if (!nexoraDir.exists()) nexoraDir.mkdirs();
-                    final File outFile = new File(nexoraDir, fileName);
-                    final File partialFile = new File(nexoraDir, fileName + ".part");
-
-                    HttpURLConnection conn = (HttpURLConnection) new URL(streamUrl).openConnection();
-                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36");
-                    conn.setInstanceFollowRedirects(true);
-                    conn.setConnectTimeout(10000);
-                    conn.setReadTimeout(15000);
-                    conn.connect();
+                    conn = openValidatedConnection(streamUrl);
                     int responseCode = conn.getResponseCode();
                     if (responseCode < 200 || responseCode >= 300) {
                         throw new java.io.IOException("Server returned HTTP " + responseCode);
                     }
+                    String contentType = conn.getContentType();
+                    if (contentType != null && contentType.toLowerCase(java.util.Locale.US).startsWith("text/html")) {
+                        throw new java.io.IOException("URL returned a web page, not media");
+                    }
 
                     int totalBytes = conn.getContentLength();
                     InputStream is = conn.getInputStream();
-                    FileOutputStream fos = new FileOutputStream(partialFile);
+                    final boolean modernStorage = Build.VERSION.SDK_INT >= 29;
+                    final File nexoraDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "NEXORA");
+                    final File outFile;
+                    if (modernStorage) {
+                        ContentValues values = new ContentValues();
+                        values.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
+                        values.put(MediaStore.Downloads.MIME_TYPE, fmtExt.equals(".mp3") ? "audio/mpeg" : "video/mp4");
+                        values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/NEXORA");
+                        values.put(MediaStore.Downloads.IS_PENDING, 1);
+                        pendingUri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                        if (pendingUri == null) throw new java.io.IOException("Could not create gallery download");
+                        output = getContentResolver().openOutputStream(pendingUri);
+                        if (output == null) throw new java.io.IOException("Could not open gallery output");
+                        outFile = null;
+                    } else {
+                        if (!nexoraDir.exists() && !nexoraDir.mkdirs()) throw new java.io.IOException("Could not create Downloads/NEXORA");
+                        outFile = new File(nexoraDir, fileName);
+                        partialFile = new File(nexoraDir, fileName + ".part");
+                        output = new FileOutputStream(partialFile);
+                    }
 
                     byte[] buf = new byte[16384];
                     int read;
@@ -862,7 +932,7 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                     long lastUiUpdate = 0;
 
                     while ((read = is.read(buf)) != -1) {
-                        fos.write(buf, 0, read);
+                        output.write(buf, 0, read);
                         downloaded += read;
                         long now = System.currentTimeMillis();
                         if (now - lastUiUpdate > 250) {
@@ -872,6 +942,7 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
+                                    if (!canUpdateUi()) return;
                                     tvQualityBadge.setText(pct >= 0 ? ("DL " + pct + "%") : ("DL " + kbStr));
                                     tvActiveSub.setText("Downloading " + fileName + " (" + kbStr + ")");
                                     tvActiveDownloadStatus.setText("Active: " + kbStr + (pct >= 0 ? (" • " + pct + "%") : ""));
@@ -879,26 +950,30 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                             });
                         }
                     }
-                    fos.flush();
-                    fos.close();
+                    output.flush();
+                    output.close();
+                    output = null;
                     is.close();
-                    if (!partialFile.renameTo(outFile)) {
+                    if (modernStorage) {
+                        ContentValues ready = new ContentValues();
+                        ready.put(MediaStore.Downloads.IS_PENDING, 0);
+                        getContentResolver().update(pendingUri, ready, null, null);
+                    } else if (!partialFile.renameTo(outFile)) {
                         throw new java.io.IOException("Could not finalize downloaded file");
                     }
 
-                    String mime = fmtExt.equals(".mp3") ? "audio/mpeg" : (fmtExt.equals(".m4a") ? "audio/mp4" : (fmtExt.equals(".wav") ? "audio/wav" : "video/mp4"));
-                    MediaScannerConnection.scanFile(
-                        DashboardActivity.this,
-                        new String[]{outFile.getAbsolutePath()},
-                        new String[]{mime},
-                        null
-                    );
+                    final String savedLocation = modernStorage ? "Downloads/NEXORA/" + fileName : outFile.getAbsolutePath();
+                    if (!modernStorage) {
+                        String mime = fmtExt.equals(".mp3") ? "audio/mpeg" : (fmtExt.equals(".m4a") ? "audio/mp4" : (fmtExt.equals(".wav") ? "audio/wav" : "video/mp4"));
+                        MediaScannerConnection.scanFile(DashboardActivity.this, new String[]{outFile.getAbsolutePath()}, new String[]{mime}, null);
+                    }
 
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+                            if (!canUpdateUi()) return;
                             tvQualityBadge.setText("SAVED ✓");
-                            tvActiveSub.setText("Saved to Gallery: /Download/NEXORA/" + fileName);
+                            tvActiveSub.setText("Saved to Gallery: " + savedLocation);
                             tvActiveDownloadStatus.setText("Completed: " + fileName);
                             Toast.makeText(DashboardActivity.this, "✅ Saved to Phone Gallery: " + fileName, Toast.LENGTH_LONG).show();
                             if (pageDownloads.getVisibility() == View.VISIBLE) refreshDownloadsManagerPage();
@@ -906,11 +981,14 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                         }
                     });
                 } catch (final Exception e) {
-                    File partial = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "NEXORA/" + fileName + ".part");
-                    if (partial.exists()) partial.delete();
+                    try { if (output != null) output.close(); } catch (Exception ignored) {}
+                    if (conn != null) conn.disconnect();
+                    if (pendingUri != null) getContentResolver().delete(pendingUri, null, null);
+                    if (partialFile != null && partialFile.exists()) partialFile.delete();
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+                            if (!canUpdateUi()) return;
                             tvQualityBadge.setText("DL ERROR");
                             tvActiveSub.setText("Download error: " + e.getMessage());
                         }
@@ -1535,15 +1613,20 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
         });
     }
 
+    private boolean canUpdateUi() {
+        return !activityDestroyed && !isFinishing() && (Build.VERSION.SDK_INT < 17 || !isDestroyed());
+    }
+
     private void requestAppPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             ArrayList<String> perms = new ArrayList<>();
-            perms.add(Manifest.permission.READ_EXTERNAL_STORAGE);
-            perms.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
             if (Build.VERSION.SDK_INT >= 33) {
                 perms.add("android.permission.READ_MEDIA_VIDEO");
                 perms.add("android.permission.READ_MEDIA_AUDIO");
                 perms.add("android.permission.POST_NOTIFICATIONS");
+            } else {
+                perms.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+                if (Build.VERSION.SDK_INT <= 28) perms.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
             }
             requestPermissions(perms.toArray(new String[0]), 101);
         }
@@ -1558,6 +1641,7 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
 
     @Override
     protected void onDestroy() {
+        activityDestroyed = true;
         super.onDestroy();
         timerHandler.removeCallbacksAndMessages(null);
         if (realVideoView != null) realVideoView.stopPlayback();
