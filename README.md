@@ -13,18 +13,18 @@ The app runs on a strict **2-Engine, 4-Library Architecture** to ensure zero cra
 
 ### 2. Engine 2: Reliable Direct Downloader
 * **Atomic downloads:** Files are written to a `.part` file and renamed only after a complete HTTP success response, preventing corrupt videos from appearing in the gallery.
-* **Library 1 (MediaScanner):** Completed files are indexed in the gallery after download.
+* **Modern gallery output:** Android 10+ uses a pending `MediaStore.Downloads` row and publishes it only after the stream completes; older devices use the legacy `.part` + `MediaScannerConnection` path.
 * **Clear errors:** HTTP failures, unsupported schemes, and interrupted downloads are reported without leaving partial files behind.
 
 ## ⚙️ Workflow (सोर्स कोड कैसे जुड़ता है?)
 1. **Search Request:** Search results are displayed as metadata cards.
 2. **YouTube links:** Opening a YouTube card launches the official YouTube app/browser.
 3. **Direct playback:** A permitted HTTP(S) media URL is played by the native Android player.
-4. **Download:** The same direct URL is streamed to `Download/NEXORA/` and scanned into the gallery after a complete download.
+4. **Download:** Only validated HTTPS direct media URLs are accepted. Android 10+ writes to `Download/NEXORA/` through scoped `MediaStore`; older devices use an atomic `.part` file.
 
 ## 📂 Source Code Structure
 * `AndroidManifest.xml` - Hardware acceleration, DayNight theme, and Storage permissions.
-* `src/main/java/com/lion/downloader/DashboardActivity.java` - The main brain containing Multi-Threading, Shell Executors, and UI logic.
+* `src/main/java/com/lion/downloader/DashboardActivity.java` - The main UI, validated direct playback, scoped-storage download, and gallery logic.
 * `res/layout/activity_dashboard.xml` - The dynamic dual-search bar and infinite scroll UI.
 * `res/raw/` - Contains only UI media bundled with the app.
 
@@ -48,8 +48,8 @@ This is a free and Open-Source project. It can be used by anyone, but **strictly
    - **Solution:** NEXORA no longer attempts to defeat those controls. It uses official YouTube playback and supports stable direct URLs for content the user is authorized to access.
 
 3. **Android storage and gallery indexing:**
-   - **Challenge:** नए एंड्रॉइड वर्जन में `WRITE_EXTERNAL_STORAGE` परमिशन ब्लॉक होने के कारण डाउनलोड की गई फाइलें सीधे गैलरी में नहीं दिखती थीं।
-   - **Solution:** Completed direct downloads use **`MediaScannerConnection`** so the file appears in the gallery without exposing an incomplete `.part` file.
+   - **Challenge:** नए एंड्रॉइड वर्जन में legacy public-path writes और `WRITE_EXTERNAL_STORAGE` से `SecurityException` तथा missing gallery entries हो सकती थीं।
+   - **Solution:** Android 10+ uses a pending **`MediaStore.Downloads`** item with `RELATIVE_PATH`, closes and publishes it only after a complete stream, and deletes the row on failure. Legacy devices retain the atomic `.part` path.
 
 4. **Memory Management in Infinite Horizontal Scrolling:**
    - **Challenge:** एक ही लाइन में अनगिनत वीडियो कार्ड लोड करने से मोबाइल की रैम (RAM) फुल होने और ऐप क्रैश होने का खतरा था।
@@ -63,7 +63,7 @@ This is a free and Open-Source project. It can be used by anyone, but **strictly
    - YouTube playback and account-controlled actions should remain inside the official YouTube app/browser.
 
 2. **Modern Android storage:**
-   - Future work should migrate downloads to MediaStore APIs for newer Android releases while preserving the current gallery indexing behavior.
+   - The scoped `MediaStore` migration is now implemented; remaining work is instrumentation coverage on physical Android API levels.
 
 3. **Performance Optimization for Infinite Loop Recycler (रैम और बैटरी ऑप्टिमाइज़ेशन):**
    - **Challenge:** जब यूजर वीडियो की लंबी सूची को लगातार स्क्रॉल करता है, तो थंबनेल बिटमैप्स (Bitmaps) लोड होने के कारण रैम (RAM) की खपत बढ़ सकती है।
