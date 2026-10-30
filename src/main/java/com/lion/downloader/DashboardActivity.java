@@ -32,6 +32,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.util.Size;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -741,8 +742,9 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
             }
             final String mediaValue = mp4UrlOrPath.trim();
             final boolean isHttps = mediaValue.regionMatches(true, 0, "https://", 0, 8);
-            final File localFile = isHttps ? null : new File(mediaValue);
-            if (!isHttps && (!localFile.isFile() || !localFile.canRead())) {
+            final boolean isContentUri = mediaValue.regionMatches(true, 0, "content://", 0, 10);
+            final File localFile = (isHttps || isContentUri) ? null : new File(mediaValue);
+            if (!isHttps && !isContentUri && (!localFile.isFile() || !localFile.canRead())) {
                 tvQualityBadge.setText("MEDIA UNAVAILABLE");
                 tvActiveSub.setText("The local media file cannot be read by this app.");
                 return;
@@ -751,7 +753,7 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
             isNativeVideoPrepared = false;
             btnCenterPlay.setVisibility(View.GONE);
             realVideoView.setVisibility(View.VISIBLE);
-            if (isHttps) {
+            if (isHttps || isContentUri) {
                 realVideoView.setVideoURI(Uri.parse(mediaValue));
             } else {
                 realVideoView.setVideoPath(localFile.getAbsolutePath());
@@ -1063,23 +1065,73 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
     // =========================================================
     private void refreshDownloadsManagerPage() {
         downloadsListContainer.removeAllViews();
+        if (Build.VERSION.SDK_INT >= 29) {
+            int count = 0;
+            Cursor cursor = null;
+            try {
+                String[] projection = {
+                    MediaStore.Downloads._ID,
+                    MediaStore.Downloads.DISPLAY_NAME,
+                    MediaStore.Downloads.MIME_TYPE,
+                    MediaStore.Downloads.SIZE,
+                    MediaStore.Downloads.RELATIVE_PATH
+                };
+                cursor = getContentResolver().query(
+                    MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                    projection,
+                    MediaStore.Downloads.RELATIVE_PATH + "=? AND " + MediaStore.Downloads.IS_PENDING + "=0",
+                    new String[]{Environment.DIRECTORY_DOWNLOADS + "/NEXORA/"},
+                    MediaStore.Downloads.DISPLAY_NAME + " ASC"
+                );
+                if (cursor != null) {
+                    int idIndex = cursor.getColumnIndexOrThrow(MediaStore.Downloads._ID);
+                    int nameIndex = cursor.getColumnIndexOrThrow(MediaStore.Downloads.DISPLAY_NAME);
+                    int mimeIndex = cursor.getColumnIndexOrThrow(MediaStore.Downloads.MIME_TYPE);
+                    int sizeIndex = cursor.getColumnIndexOrThrow(MediaStore.Downloads.SIZE);
+                    while (cursor.moveToNext()) {
+                        long id = cursor.getLong(idIndex);
+                        String name = cursor.getString(nameIndex);
+                        String mime = cursor.getString(mimeIndex);
+                        long size = cursor.getLong(sizeIndex);
+                        Uri itemUri = ContentUris.withAppendedId(MediaStore.Downloads.EXTERNAL_CONTENT_URI, id);
+                        addLocalMediaRowToContainer(downloadsListContainer, itemUri, name, "NEXORA Download", size, mime);
+                        count++;
+                    }
+                }
+            } catch (Exception error) {
+                TextView problem = new TextView(this);
+                problem.setText("Could not read the NEXORA downloads index: " + error.getMessage());
+                problem.setTextColor(isDarkMode ? Color.WHITE : Color.BLACK);
+                problem.setPadding(dp(12), dp(24), dp(12), dp(24));
+                downloadsListContainer.addView(problem);
+            } finally {
+                if (cursor != null) cursor.close();
+            }
+            if (count == 0 && downloadsListContainer.getChildCount() == 0) {
+                TextView empty = new TextView(this);
+                empty.setText("No NEXORA downloads were found in Downloads/NEXORA yet.");
+                empty.setTextColor(isDarkMode ? Color.parseColor("#90A4AE") : Color.parseColor("#455A64"));
+                empty.setTextSize(11.5f);
+                empty.setPadding(dp(12), dp(24), dp(12), dp(24));
+                downloadsListContainer.addView(empty);
+            }
+            return;
+        }
+
         File nexoraDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "NEXORA");
         File[] files = nexoraDir.exists() ? nexoraDir.listFiles() : null;
-
         if (files == null || files.length == 0) {
             TextView empty = new TextView(this);
-            empty.setText("No files downloaded inside /Download/NEXORA yet.\n\nGo to Home, select any video, and tap 'Download' or '⋮' to choose format & quality.");
+            empty.setText("No files downloaded inside /Download/NEXORA yet.");
             empty.setTextColor(isDarkMode ? Color.parseColor("#90A4AE") : Color.parseColor("#455A64"));
             empty.setTextSize(11.5f);
             empty.setPadding(dp(12), dp(24), dp(12), dp(24));
             downloadsListContainer.addView(empty);
             return;
         }
-
-        for (int i = 0; i < files.length; i++) {
-            final File f = files[i];
-            if (f.isDirectory() || f.length() < 500) continue;
-            addLocalVideoRowToContainer(downloadsListContainer, f, "NEXORA Download");
+        for (File file : files) {
+            if (file.isDirectory() || file.length() < 500) continue;
+            addLocalVideoRowToContainer(downloadsListContainer, file, "NEXORA Download");
         }
     }
 
@@ -1097,10 +1149,65 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
             requestAppPermissions();
             return;
         }
+
+        // Android 10+ must be browsed through MediaStore content URIs, not raw DATA paths.
+        if (Build.VERSION.SDK_INT >= 29) {
+            int count = 0;
+            Cursor cursor = null;
+            try {
+                String[] projection = {
+                    MediaStore.Video.Media._ID,
+                    MediaStore.Video.Media.DISPLAY_NAME,
+                    MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
+                    MediaStore.Video.Media.SIZE
+                };
+                cursor = getContentResolver().query(
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                    projection,
+                    null,
+                    null,
+                    MediaStore.Video.Media.DATE_ADDED + " DESC"
+                );
+                if (cursor != null) {
+                    int idIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID);
+                    int nameIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME);
+                    int bucketIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.BUCKET_DISPLAY_NAME);
+                    int sizeIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE);
+                    while (cursor.moveToNext()) {
+                        long id = cursor.getLong(idIndex);
+                        String name = cursor.getString(nameIndex);
+                        String bucket = cursor.getString(bucketIndex);
+                        long size = cursor.getLong(sizeIndex);
+                        Uri itemUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id);
+                        addLocalMediaRowToContainer(galleryListContainer, itemUri, name,
+                                bucket == null ? "Phone Storage" : bucket, size, "video/*");
+                        count++;
+                    }
+                }
+            } catch (Exception error) {
+                TextView problem = new TextView(this);
+                problem.setText("Could not scan MediaStore: " + error.getMessage());
+                problem.setTextColor(isDarkMode ? Color.WHITE : Color.BLACK);
+                problem.setPadding(dp(12), dp(24), dp(12), dp(24));
+                galleryListContainer.addView(problem);
+            } finally {
+                if (cursor != null) cursor.close();
+            }
+            tvGalleryHeader.setText("🎬 Phone Gallery (" + count + " Videos)");
+            if (count == 0 && galleryListContainer.getChildCount() == 0) {
+                TextView empty = new TextView(this);
+                empty.setText("No videos are currently visible in the phone media library.");
+                empty.setTextColor(isDarkMode ? Color.parseColor("#90A4AE") : Color.parseColor("#455A64"));
+                empty.setTextSize(11.5f);
+                empty.setPadding(dp(12), dp(24), dp(12), dp(24));
+                galleryListContainer.addView(empty);
+            }
+            return;
+        }
+
+        // Pre-Android 10 compatibility path.
         final ArrayList<File> allPhoneVideos = new ArrayList<>();
         final ArrayList<String> folderNames = new ArrayList<>();
-
-        // 1. Query Android MediaStore for ALL videos stored anywhere on the phone
         try {
             String[] projection = {
                 MediaStore.Video.Media.DATA,
@@ -1121,9 +1228,9 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                     String path = cursor.getString(dataIdx);
                     String bucket = cursor.getString(bucketIdx);
                     if (path != null) {
-                        File vf = new File(path);
-                        if (vf.exists() && vf.length() > 1000 && !allPhoneVideos.contains(vf)) {
-                            allPhoneVideos.add(vf);
+                        File file = new File(path);
+                        if (file.exists() && file.length() > 1000 && !allPhoneVideos.contains(file)) {
+                            allPhoneVideos.add(file);
                             folderNames.add(bucket != null ? bucket : "Phone Storage");
                         }
                     }
@@ -1132,7 +1239,6 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
             }
         } catch (Exception ignored) {}
 
-        // 2. Also directly scan common folders (/Download, /Download/NEXORA, /Movies, /DCIM/Camera)
         File extRoot = Environment.getExternalStorageDirectory();
         File[] commonDirs = {
             new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "NEXORA"),
@@ -1141,16 +1247,17 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
             new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "Camera"),
             new File(extRoot, "WhatsApp/Media/WhatsApp Video")
         };
-
         for (File dir : commonDirs) {
             if (dir != null && dir.exists() && dir.isDirectory()) {
-                File[] arr = dir.listFiles();
-                if (arr != null) {
-                    for (File f : arr) {
-                        String n = f.getName().toLowerCase();
-                        if (!f.isDirectory() && (n.endsWith(".mp4") || n.endsWith(".mkv") || n.endsWith(".webm") || n.endsWith(".3gp") || n.endsWith(".mp3") || n.endsWith(".m4a") || n.endsWith(".wav")) && f.length() > 1000) {
-                            if (!allPhoneVideos.contains(f)) {
-                                allPhoneVideos.add(f);
+                File[] entries = dir.listFiles();
+                if (entries != null) {
+                    for (File file : entries) {
+                        String name = file.getName().toLowerCase(java.util.Locale.US);
+                        if (!file.isDirectory() && (name.endsWith(".mp4") || name.endsWith(".mkv")
+                                || name.endsWith(".webm") || name.endsWith(".3gp") || name.endsWith(".mp3")
+                                || name.endsWith(".m4a") || name.endsWith(".wav")) && file.length() > 1000) {
+                            if (!allPhoneVideos.contains(file)) {
+                                allPhoneVideos.add(file);
                                 folderNames.add(dir.getName());
                             }
                         }
@@ -1158,22 +1265,117 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                 }
             }
         }
-
         tvGalleryHeader.setText("🎬 Phone Gallery (" + allPhoneVideos.size() + " Real Videos)");
-
         if (allPhoneVideos.isEmpty()) {
             TextView empty = new TextView(this);
-            empty.setText("No local videos found on device storage.\n\nTap '🔄 Scan Phone' to grant storage permission or download any video first.");
+            empty.setText("No local videos found on device storage.");
             empty.setTextColor(isDarkMode ? Color.parseColor("#90A4AE") : Color.parseColor("#455A64"));
             empty.setTextSize(11.5f);
             empty.setPadding(dp(12), dp(24), dp(12), dp(24));
             galleryListContainer.addView(empty);
             return;
         }
-
         for (int i = 0; i < allPhoneVideos.size(); i++) {
             addLocalVideoRowToContainer(galleryListContainer, allPhoneVideos.get(i), folderNames.get(i));
         }
+    }
+
+    private void addLocalMediaRowToContainer(LinearLayout parent, final Uri mediaUri,
+            final String displayName, String folderLabel, final long sizeBytes, final String mimeType) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.HORIZONTAL);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setBackgroundResource(isDarkMode ? R.drawable.frame_slate_pill : R.drawable.frame_light_card);
+        card.setPadding(dp(8), dp(8), dp(8), dp(8));
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        cardParams.bottomMargin = dp(8);
+        card.setLayoutParams(cardParams);
+
+        final ImageView thumbnail = new ImageView(this);
+        LinearLayout.LayoutParams thumbParams = new LinearLayout.LayoutParams(dp(84), dp(54));
+        thumbParams.rightMargin = dp(10);
+        thumbnail.setLayoutParams(thumbParams);
+        thumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        thumbnail.setBackgroundColor(Color.parseColor("#0B1324"));
+        new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    final Bitmap bitmap = getContentResolver().loadThumbnail(mediaUri, new Size(dp(84), dp(54)), null);
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            if (canUpdateUi() && bitmap != null) thumbnail.setImageBitmap(bitmap);
+                        }
+                    });
+                } catch (Exception ignored) {}
+            }
+        }).start();
+
+        LinearLayout info = new LinearLayout(this);
+        info.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        info.setOrientation(LinearLayout.VERTICAL);
+        TextView name = new TextView(this);
+        name.setText(displayName == null ? "Media file" : displayName);
+        name.setTextSize(10.5f);
+        name.setTextColor(isDarkMode ? Color.WHITE : Color.BLACK);
+        name.setMaxLines(2);
+        name.setEllipsize(TextUtils.TruncateAt.END);
+        long sizeKb = sizeBytes / 1024;
+        String sizeText = sizeKb >= 1024 ? String.format("%.1f MB", sizeKb / 1024f) : sizeKb + " KB";
+        TextView meta = new TextView(this);
+        meta.setText("📁 " + folderLabel + " • " + sizeText + (mimeType == null ? "" : " • " + mimeType));
+        meta.setTextSize(8.5f);
+        meta.setTextColor(Color.parseColor("#00E5FF"));
+        info.addView(name);
+        info.addView(meta);
+
+        TextView play = new TextView(this);
+        play.setBackgroundResource(R.drawable.chip_active);
+        play.setPadding(dp(10), dp(6), dp(10), dp(6));
+        play.setText("▶ Play");
+        play.setTextColor(Color.WHITE);
+        play.setTextSize(9.5f);
+        play.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                switchPage(0);
+                currentTitle = displayName == null ? "Local media" : displayName;
+                currentVideoUrl = mediaUri.toString();
+                currentDirectMp4 = mediaUri.toString();
+                tvActiveTitle.setText(currentTitle);
+                tvActiveSub.setText("Playing local media");
+                playDirectMp4InNativeView(mediaUri.toString());
+            }
+        });
+
+        TextView delete = new TextView(this);
+        delete.setPadding(dp(8), dp(6), dp(4), dp(6));
+        delete.setText("🗑️");
+        delete.setTextSize(12f);
+        delete.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                try {
+                    int deleted = getContentResolver().delete(mediaUri, null, null);
+                    if (deleted > 0) {
+                        Toast.makeText(DashboardActivity.this, "Deleted: " + displayName, Toast.LENGTH_SHORT).show();
+                        if (pageDownloads.getVisibility() == View.VISIBLE) refreshDownloadsManagerPage();
+                        if (pageGallery.getVisibility() == View.VISIBLE) scanAndPopulatePhoneGalleryPage();
+                    } else {
+                        Toast.makeText(DashboardActivity.this, "Android did not delete this media item.", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception error) {
+                    Toast.makeText(DashboardActivity.this, "Delete failed: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+
+        card.addView(thumbnail);
+        card.addView(info);
+        card.addView(play);
+        card.addView(delete);
+        card.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { play.performClick(); }
+        });
+        parent.addView(card);
     }
 
     private void addLocalVideoRowToContainer(LinearLayout parent, final File videoFile, String folderLabel) {
