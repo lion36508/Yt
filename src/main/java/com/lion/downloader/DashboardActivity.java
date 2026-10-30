@@ -104,6 +104,8 @@ public class DashboardActivity extends Activity {
     private Handler timerHandler = new Handler(Looper.getMainLooper());
     private boolean isNativeVideoPrepared = false;
     private volatile boolean activityDestroyed = false;
+    private volatile int feedRequestSequence = 0;
+    private boolean isPlayerFullscreen = false;
 
     // Feed Pool
     private String[] poolIds = new String[POOL_SIZE];
@@ -125,13 +127,15 @@ public class DashboardActivity extends Activity {
         setContentView(R.layout.activity_dashboard);
 
         prefs = getSharedPreferences("nexora_pro_settings", MODE_PRIVATE);
-        selectedFormatLabel = prefs.getString("default_fmt", "1080p_MP4");
-        selectedFormatExt = selectedFormatLabel.contains("MP3") ? ".mp3" : (selectedFormatLabel.contains("M4A") ? ".m4a" : (selectedFormatLabel.contains("WAV") ? ".wav" : (selectedFormatLabel.contains("MKV") ? ".mkv" : ".mp4")));
+        selectedFormatLabel = "ORIGINAL";
+        selectedFormatExt = "";
+        if (!"ORIGINAL".equals(prefs.getString("default_fmt", "ORIGINAL"))) {
+            prefs.edit().putString("default_fmt", "ORIGINAL").apply();
+        }
         autoPlayNext = prefs.getBoolean("autoplay_next", true);
         hwAcceleration = prefs.getBoolean("hw_accel", true);
 
         getSharedPreferences("nexora_permanent_auth", MODE_PRIVATE).edit().putBoolean("boxes_ticked_and_started", true).apply();
-        requestAppPermissions();
         bindViews();
         tvSelectedFormatBtn.setText("DL " + selectedFormatLabel.split("_")[0]);
 
@@ -293,18 +297,9 @@ public class DashboardActivity extends Activity {
         LinearLayout list = new LinearLayout(this);
         list.setOrientation(LinearLayout.VERTICAL);
 
+        // Transcoding is not implemented in this build. Offer only a truthful source-preserving option.
         final String[][] options = {
-            {"VIDEO • 4K Ultra HD (2160p)", "4K_MP4", ".mp4"},
-            {"VIDEO • Full HD (1080p MP4)", "1080p_MP4", ".mp4"},
-            {"VIDEO • High Definition (720p MP4)", "720p_MP4", ".mp4"},
-            {"VIDEO • Standard Quality (480p MP4)", "480p_MP4", ".mp4"},
-            {"VIDEO • Data Saver (360p MP4)", "360p_MP4", ".mp4"},
-            {"VIDEO • MKV High Bitrate (1080p MKV)", "1080p_MKV", ".mkv"},
-            {"VIDEO • WEBM Stream Format (720p WEBM)", "720p_WEBM", ".webm"},
-            {"AUDIO • MP3 Studio Quality (320kbps)", "320k_MP3", ".mp3"},
-            {"AUDIO • MP3 Standard Quality (192kbps)", "192k_MP3", ".mp3"},
-            {"AUDIO • M4A Original AAC Audio", "AAC_M4A", ".m4a"},
-            {"AUDIO • WAV Lossless Uncompressed", "Lossless_WAV", ".wav"}
+            {"ORIGINAL • Save the source media unchanged (no conversion)", "ORIGINAL", ""}
         };
 
         for (int i = 0; i < options.length; i++) {
@@ -517,19 +512,28 @@ public class DashboardActivity extends Activity {
     // 5. SERVER FEED LOADER (STRICT PLATFORM SEPARATION)
     // =========================================================
     private void loadUnifiedMixedFeed(final String query) {
-        tvActiveSub.setText("Loading " + currentPlatform + " Feed: " + query);
+        final String requestedPlatform = currentPlatform;
+        final int requestId = ++feedRequestSequence;
+        tvActiveSub.setText("Loading " + requestedPlatform + " Feed: " + query);
+
+        if ("INSTAGRAM".equals(requestedPlatform) || "X".equals(requestedPlatform)) {
+            tvQualityBadge.setText("NOT CONNECTED");
+            tvActiveSub.setText(requestedPlatform + " feed is unavailable: no real provider integration is configured. No TikTok results will be shown as " + requestedPlatform + ".");
+            Toast.makeText(this, requestedPlatform + " feed integration is not configured.", Toast.LENGTH_LONG).show();
+            return;
+        }
 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                if (currentPlatform.equals("TIKTOK") || currentPlatform.equals("INSTAGRAM") || currentPlatform.equals("X")) {
-                    fetchFromShortVideoServer(query, 0, POOL_SIZE, 1);
+                if (requestedPlatform.equals("TIKTOK")) {
+                    fetchFromShortVideoServer(query, 0, POOL_SIZE, 1, requestId);
                     return;
                 }
 
-                if (currentPlatform.equals("ALL")) {
-                    // Even slots: TikTok/Insta/FB/X direct MP4 streams; Odd slots: YouTube videos
-                    fetchFromShortVideoServer(query, 0, POOL_SIZE, 2);
+                if (requestedPlatform.equals("ALL")) {
+                    // Only sources actually integrated in this build: TikTok + YouTube.
+                    fetchFromShortVideoServer(query, 0, POOL_SIZE, 2, requestId);
                 }
 
                 try {
@@ -553,15 +557,16 @@ public class DashboardActivity extends Activity {
                     br.close();
 
                     for (int i = 0; i < ytIds.size() && i < POOL_SIZE; i++) {
-                        if (currentPlatform.equals("ALL") && i % 2 == 0) continue;
-                        loadSingleYouTubeIntoSlot(i, ytIds.get(i));
+                        if (requestedPlatform.equals("ALL") && i % 2 == 0) continue;
+                        if (requestId != feedRequestSequence) return;
+                        loadSingleYouTubeIntoSlot(i, ytIds.get(i), requestId);
                     }
                 } catch (Exception ignored) {}
             }
         }).start();
     }
 
-    private void fetchFromShortVideoServer(String query, int startSlot, int limit, int step) {
+    private void fetchFromShortVideoServer(String query, int startSlot, int limit, int step, final int requestId) {
         try {
             String tkUrl = "https://www.tikwm.com/api/feed/search?keywords=" + URLEncoder.encode(query, "UTF-8") + "&count=12";
             HttpURLConnection conn = (HttpURLConnection) new URL(tkUrl).openConnection();
@@ -581,8 +586,8 @@ public class DashboardActivity extends Activity {
                 JSONArray videos = dataObj != null ? dataObj.optJSONArray("videos") : null;
 
                 if (videos != null && videos.length() > 0) {
-                    String[] mixTags = {"TIKTOK", "INSTA", "FB REEL", "X CLIP"};
                     for (int i = startSlot; i < limit; i += step) {
+                        if (requestId != feedRequestSequence) return;
                         JSONObject v = videos.getJSONObject(i % videos.length());
                         final String vid = v.optString("video_id", "tk_" + i);
                         final String rawTitle = v.optString("title", "Viral Video #" + (i + 1));
@@ -592,13 +597,14 @@ public class DashboardActivity extends Activity {
                         String coverUrl = v.optString("cover", "");
                         if (coverUrl.startsWith("/")) coverUrl = "https://www.tikwm.com" + coverUrl;
                         final int durSec = v.optInt("duration", 15);
-                        final String tag = currentPlatform.equals("ALL") ? mixTags[(i / step) % mixTags.length] : currentPlatform;
+                        final String tag = "TIKTOK";
                         final Bitmap bmp = downloadBitmap(coverUrl);
                         final int slot = i;
 
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                if (!canUpdateUi() || requestId != feedRequestSequence) return;
                                 poolIds[slot] = vid;
                                 poolTitles[slot] = rawTitle.isEmpty() ? (tag + " Clip") : rawTitle;
                                 poolMetas[slot] = tag + " • Direct MP4";
@@ -615,7 +621,7 @@ public class DashboardActivity extends Activity {
         } catch (Exception ignored) {}
     }
 
-    private void loadSingleYouTubeIntoSlot(final int slot, final String videoId) {
+    private void loadSingleYouTubeIntoSlot(final int slot, final String videoId, final int requestId) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -644,6 +650,7 @@ public class DashboardActivity extends Activity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        if (!canUpdateUi() || requestId != feedRequestSequence) return;
                         poolIds[slot] = videoId;
                         poolTitles[slot] = finalTitle;
                         poolMetas[slot] = finalAuthor;
@@ -727,16 +734,28 @@ public class DashboardActivity extends Activity {
 
 private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
         try {
-            if (mp4UrlOrPath == null || !mp4UrlOrPath.toLowerCase(java.util.Locale.US).startsWith("https://")) {
-                tvQualityBadge.setText("UNSAFE URL");
-                tvActiveSub.setText("Only HTTPS direct media URLs are supported.");
+            if (mp4UrlOrPath == null || mp4UrlOrPath.trim().isEmpty()) {
+                tvQualityBadge.setText("INVALID MEDIA");
+                tvActiveSub.setText("The selected media path is empty.");
+                return;
+            }
+            final String mediaValue = mp4UrlOrPath.trim();
+            final boolean isHttps = mediaValue.regionMatches(true, 0, "https://", 0, 8);
+            final File localFile = isHttps ? null : new File(mediaValue);
+            if (!isHttps && (!localFile.isFile() || !localFile.canRead())) {
+                tvQualityBadge.setText("MEDIA UNAVAILABLE");
+                tvActiveSub.setText("The local media file cannot be read by this app.");
                 return;
             }
             if (realVideoView.isPlaying()) realVideoView.stopPlayback();
             isNativeVideoPrepared = false;
             btnCenterPlay.setVisibility(View.GONE);
             realVideoView.setVisibility(View.VISIBLE);
-            realVideoView.setVideoURI(Uri.parse(mp4UrlOrPath));
+            if (isHttps) {
+                realVideoView.setVideoURI(Uri.parse(mediaValue));
+            } else {
+                realVideoView.setVideoPath(localFile.getAbsolutePath());
+            }
             realVideoView.requestFocus();
 
             realVideoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
@@ -875,15 +894,48 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
         throw new java.io.IOException("Too many redirects");
     }
 
-    private void executeDirectHttpFileDownload(final String streamUrl, final String fmtLabel, final String fmtExt) {
-        String cleanTitle = (currentTitle == null || currentTitle.isEmpty() ? "NEXORA_Media" : currentTitle).replaceAll("[^a-zA-Z0-9_-]", "_");
-        if (cleanTitle.length() > 30) cleanTitle = cleanTitle.substring(0, 30);
-        final String fileName = cleanTitle + "_" + fmtLabel + fmtExt;
+    private String inferMediaExtension(String contentType, String mediaUrl) {
+        String mime = contentType == null ? "" : contentType.split(";")[0].trim().toLowerCase(java.util.Locale.US);
+        if ("video/mp4".equals(mime)) return ".mp4";
+        if ("video/webm".equals(mime)) return ".webm";
+        if ("video/x-matroska".equals(mime) || "video/mkv".equals(mime)) return ".mkv";
+        if ("video/3gpp".equals(mime)) return ".3gp";
+        if ("audio/mpeg".equals(mime) || "audio/mp3".equals(mime)) return ".mp3";
+        if ("audio/mp4".equals(mime) || "audio/x-m4a".equals(mime)) return ".m4a";
+        if ("audio/wav".equals(mime) || "audio/x-wav".equals(mime) || "audio/wave".equals(mime)) return ".wav";
+        if ("audio/aac".equals(mime)) return ".aac";
+        if ("audio/ogg".equals(mime)) return ".ogg";
+        try {
+            String path = new URL(mediaUrl).getPath();
+            int dot = path.lastIndexOf('.');
+            if (dot >= 0 && dot < path.length() - 1) {
+                String ext = path.substring(dot).toLowerCase(java.util.Locale.US);
+                if (".mp4".equals(ext) || ".webm".equals(ext) || ".mkv".equals(ext)
+                        || ".3gp".equals(ext) || ".mp3".equals(ext) || ".m4a".equals(ext)
+                        || ".wav".equals(ext) || ".aac".equals(ext) || ".ogg".equals(ext)) return ext;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
 
-        Toast.makeText(this, "⬇ Downloading: " + fileName, Toast.LENGTH_SHORT).show();
-        tvQualityBadge.setText("DL 0%");
-        tvActiveSub.setText("Downloading " + fileName + "...");
-        tvActiveDownloadStatus.setText("Downloading: " + fileName);
+    private String mimeForMediaExtension(String extension) {
+        if (".mp4".equals(extension)) return "video/mp4";
+        if (".webm".equals(extension)) return "video/webm";
+        if (".mkv".equals(extension)) return "video/x-matroska";
+        if (".3gp".equals(extension)) return "video/3gpp";
+        if (".mp3".equals(extension)) return "audio/mpeg";
+        if (".m4a".equals(extension)) return "audio/mp4";
+        if (".wav".equals(extension)) return "audio/wav";
+        if (".aac".equals(extension)) return "audio/aac";
+        if (".ogg".equals(extension)) return "audio/ogg";
+        throw new IllegalArgumentException("Unsupported media extension: " + extension);
+    }
+
+    private void executeDirectHttpFileDownload(final String streamUrl, final String fmtLabel, final String fmtExt) {
+        Toast.makeText(this, "⬇ Saving original media unchanged...", Toast.LENGTH_SHORT).show();
+        tvQualityBadge.setText("DL");
+        tvActiveSub.setText("Connecting to the media source...");
+        tvActiveDownloadStatus.setText("Preparing original source download...");
 
         new Thread(new Runnable() {
             @Override
@@ -902,6 +954,14 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                     if (contentType != null && contentType.toLowerCase(java.util.Locale.US).startsWith("text/html")) {
                         throw new java.io.IOException("URL returned a web page, not media");
                     }
+                    final String actualExt = inferMediaExtension(contentType, streamUrl);
+                    if (actualExt == null) {
+                        throw new java.io.IOException("The source format is unknown. Nothing was saved with a guessed extension.");
+                    }
+                    final String actualMime = mimeForMediaExtension(actualExt);
+                    String cleanTitle = (currentTitle == null || currentTitle.isEmpty() ? "NEXORA_Media" : currentTitle).replaceAll("[^a-zA-Z0-9_-]", "_");
+                    if (cleanTitle.length() > 30) cleanTitle = cleanTitle.substring(0, 30);
+                    final String fileName = cleanTitle + actualExt;
 
                     int totalBytes = conn.getContentLength();
                     InputStream is = conn.getInputStream();
@@ -911,7 +971,7 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                     if (modernStorage) {
                         ContentValues values = new ContentValues();
                         values.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
-                        values.put(MediaStore.Downloads.MIME_TYPE, fmtExt.equals(".mp3") ? "audio/mpeg" : "video/mp4");
+                        values.put(MediaStore.Downloads.MIME_TYPE, actualMime);
                         values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/NEXORA");
                         values.put(MediaStore.Downloads.IS_PENDING, 1);
                         pendingUri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
@@ -930,7 +990,6 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                     int read;
                     long downloaded = 0;
                     long lastUiUpdate = 0;
-
                     while ((read = is.read(buf)) != -1) {
                         output.write(buf, 0, read);
                         downloaded += read;
@@ -944,7 +1003,7 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                                 public void run() {
                                     if (!canUpdateUi()) return;
                                     tvQualityBadge.setText(pct >= 0 ? ("DL " + pct + "%") : ("DL " + kbStr));
-                                    tvActiveSub.setText("Downloading " + fileName + " (" + kbStr + ")");
+                                    tvActiveSub.setText("Downloading original " + fileName + " (" + kbStr + ")");
                                     tvActiveDownloadStatus.setText("Active: " + kbStr + (pct >= 0 ? (" • " + pct + "%") : ""));
                                 }
                             });
@@ -954,6 +1013,8 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                     output.close();
                     output = null;
                     is.close();
+                    conn.disconnect();
+                    conn = null;
                     if (modernStorage) {
                         ContentValues ready = new ContentValues();
                         ready.put(MediaStore.Downloads.IS_PENDING, 0);
@@ -964,18 +1025,16 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
 
                     final String savedLocation = modernStorage ? "Downloads/NEXORA/" + fileName : outFile.getAbsolutePath();
                     if (!modernStorage) {
-                        String mime = fmtExt.equals(".mp3") ? "audio/mpeg" : (fmtExt.equals(".m4a") ? "audio/mp4" : (fmtExt.equals(".wav") ? "audio/wav" : "video/mp4"));
-                        MediaScannerConnection.scanFile(DashboardActivity.this, new String[]{outFile.getAbsolutePath()}, new String[]{mime}, null);
+                        MediaScannerConnection.scanFile(DashboardActivity.this, new String[]{outFile.getAbsolutePath()}, new String[]{actualMime}, null);
                     }
-
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             if (!canUpdateUi()) return;
                             tvQualityBadge.setText("SAVED ✓");
-                            tvActiveSub.setText("Saved to Gallery: " + savedLocation);
+                            tvActiveSub.setText("Saved original source: " + savedLocation);
                             tvActiveDownloadStatus.setText("Completed: " + fileName);
-                            Toast.makeText(DashboardActivity.this, "✅ Saved to Phone Gallery: " + fileName, Toast.LENGTH_LONG).show();
+                            Toast.makeText(DashboardActivity.this, "✅ Saved original media: " + fileName, Toast.LENGTH_LONG).show();
                             if (pageDownloads.getVisibility() == View.VISIBLE) refreshDownloadsManagerPage();
                             if (pageGallery.getVisibility() == View.VISIBLE) scanAndPopulatePhoneGalleryPage();
                         }
@@ -991,6 +1050,7 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                             if (!canUpdateUi()) return;
                             tvQualityBadge.setText("DL ERROR");
                             tvActiveSub.setText("Download error: " + e.getMessage());
+                            tvActiveDownloadStatus.setText("Download failed; no converted file was created.");
                         }
                     });
                 }
@@ -1028,6 +1088,15 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
     // =========================================================
     private void scanAndPopulatePhoneGalleryPage() {
         galleryListContainer.removeAllViews();
+        if (!hasVideoReadPermission()) {
+            TextView permissionMessage = new TextView(this);
+            permissionMessage.setText("Allow video access to scan your phone gallery.");
+            permissionMessage.setTextColor(isDarkMode ? Color.WHITE : Color.BLACK);
+            permissionMessage.setPadding(dp(12), dp(24), dp(12), dp(24));
+            galleryListContainer.addView(permissionMessage);
+            requestAppPermissions();
+            return;
+        }
         final ArrayList<File> allPhoneVideos = new ArrayList<>();
         final ArrayList<String> folderNames = new ArrayList<>();
 
@@ -1259,19 +1328,13 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
             }
         );
 
-        // 3. Hardware GPU Decoder (HW+) Switch
-        addSettingSwitchRow(
-            "🚀 GPU Hardware Acceleration (HW+)",
-            "Uses C++ MediaCodec GPU hardware rendering for smooth 60FPS",
-            hwAcceleration,
-            new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    hwAcceleration = ((Switch) v).isChecked();
-                    prefs.edit().putBoolean("hw_accel", hwAcceleration).apply();
-                }
-            }
-        );
+        // The standalone C++ helper is not wired into this Activity's player.
+        TextView decoderInfo = new TextView(this);
+        decoderInfo.setText("Playback uses Android VideoView/MediaPlayer. The separate C++ helper is not integrated, so a custom GPU decoder switch is not available in this build.");
+        decoderInfo.setTextColor(isDarkMode ? Color.parseColor("#80B3FF") : Color.parseColor("#455A64"));
+        decoderInfo.setTextSize(10f);
+        decoderInfo.setPadding(dp(12), dp(10), dp(12), dp(10));
+        settingsContentContainer.addView(decoderInfo);
 
         // 4. Default Format & Quality Selector Row
         LinearLayout fmtRow = new LinearLayout(this);
@@ -1548,9 +1611,7 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
         findViewById(R.id.btnFullscreen).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    enterPictureInPictureMode(new PictureInPictureParams.Builder().build());
-                }
+                setPlayerFullscreen(!isPlayerFullscreen);
             }
         });
 
@@ -1582,9 +1643,7 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
         findViewById(R.id.btnRescanGallery).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                requestAppPermissions();
                 scanAndPopulatePhoneGalleryPage();
-                Toast.makeText(DashboardActivity.this, "Phone Gallery Scanned!", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -1617,18 +1676,53 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
         return !activityDestroyed && !isFinishing() && (Build.VERSION.SDK_INT < 17 || !isDestroyed());
     }
 
+    private boolean hasVideoReadPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true;
+        String permission = Build.VERSION.SDK_INT >= 33
+                ? Manifest.permission.READ_MEDIA_VIDEO
+                : Manifest.permission.READ_EXTERNAL_STORAGE;
+        return checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
+    }
+
     private void requestAppPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            ArrayList<String> perms = new ArrayList<>();
-            if (Build.VERSION.SDK_INT >= 33) {
-                perms.add("android.permission.READ_MEDIA_VIDEO");
-                perms.add("android.permission.READ_MEDIA_AUDIO");
-                perms.add("android.permission.POST_NOTIFICATIONS");
-            } else {
-                perms.add(Manifest.permission.READ_EXTERNAL_STORAGE);
-                if (Build.VERSION.SDK_INT <= 28) perms.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || hasVideoReadPermission()) return;
+        String permission = Build.VERSION.SDK_INT >= 33
+                ? Manifest.permission.READ_MEDIA_VIDEO
+                : Manifest.permission.READ_EXTERNAL_STORAGE;
+        requestPermissions(new String[]{permission}, 101);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != 101) return;
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (pageGallery != null && pageGallery.getVisibility() == View.VISIBLE) {
+                scanAndPopulatePhoneGalleryPage();
             }
-            requestPermissions(perms.toArray(new String[0]), 101);
+        } else if (pageGallery != null && pageGallery.getVisibility() == View.VISIBLE) {
+            galleryListContainer.removeAllViews();
+            TextView message = new TextView(this);
+            message.setText("Video access was not granted. Allow media access in Android Settings to browse your videos.");
+            message.setTextColor(isDarkMode ? Color.WHITE : Color.BLACK);
+            message.setPadding(dp(12), dp(24), dp(12), dp(24));
+            galleryListContainer.addView(message);
+        }
+    }
+
+    private void setPlayerFullscreen(boolean fullscreen) {
+        isPlayerFullscreen = fullscreen;
+        View decor = getWindow().getDecorView();
+        if (fullscreen) {
+            decor.setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        } else {
+            decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
         }
     }
 
@@ -1642,6 +1736,7 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
     @Override
     protected void onDestroy() {
         activityDestroyed = true;
+        feedRequestSequence++;
         super.onDestroy();
         timerHandler.removeCallbacksAndMessages(null);
         if (realVideoView != null) realVideoView.stopPlayback();
