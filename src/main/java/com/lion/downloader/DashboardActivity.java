@@ -1361,18 +1361,24 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
         delete.setTextSize(12f);
         delete.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
-                try {
-                    int deleted = getContentResolver().delete(mediaUri, null, null);
-                    if (deleted > 0) {
-                        Toast.makeText(DashboardActivity.this, "Deleted: " + displayName, Toast.LENGTH_SHORT).show();
-                        if (pageDownloads.getVisibility() == View.VISIBLE) refreshDownloadsManagerPage();
-                        if (pageGallery.getVisibility() == View.VISIBLE) scanAndPopulatePhoneGalleryPage();
-                    } else {
-                        Toast.makeText(DashboardActivity.this, "Android did not delete this media item.", Toast.LENGTH_SHORT).show();
-                    }
-                } catch (Exception error) {
-                    Toast.makeText(DashboardActivity.this, "Delete failed: " + error.getMessage(), Toast.LENGTH_LONG).show();
-                }
+                new android.app.AlertDialog.Builder(DashboardActivity.this)
+                    .setTitle("Delete media?")
+                    .setMessage("Delete \"" + (displayName == null ? "this file" : displayName) + "\" from device storage? This cannot be undone.")
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Delete", (dialog, which) -> {
+                        try {
+                            int deleted = getContentResolver().delete(mediaUri, null, null);
+                            if (deleted > 0) {
+                                Toast.makeText(DashboardActivity.this, "Deleted: " + displayName, Toast.LENGTH_SHORT).show();
+                                if (pageDownloads.getVisibility() == View.VISIBLE) refreshDownloadsManagerPage();
+                                if (pageGallery.getVisibility() == View.VISIBLE) scanAndPopulatePhoneGalleryPage();
+                            } else {
+                                Toast.makeText(DashboardActivity.this, "Android did not delete this media item.", Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (Exception error) {
+                            Toast.makeText(DashboardActivity.this, "Delete failed: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    }).show();
             }
         });
 
@@ -1467,11 +1473,19 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
         btnDel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (videoFile.delete()) {
-                    Toast.makeText(DashboardActivity.this, "Deleted: " + videoFile.getName(), Toast.LENGTH_SHORT).show();
-                    if (pageDownloads.getVisibility() == View.VISIBLE) refreshDownloadsManagerPage();
-                    if (pageGallery.getVisibility() == View.VISIBLE) scanAndPopulatePhoneGalleryPage();
-                }
+                new android.app.AlertDialog.Builder(DashboardActivity.this)
+                    .setTitle("Delete media?")
+                    .setMessage("Delete \"" + videoFile.getName() + "\" from device storage? This cannot be undone.")
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Delete", (dialog, which) -> {
+                        if (videoFile.delete()) {
+                            Toast.makeText(DashboardActivity.this, "Deleted: " + videoFile.getName(), Toast.LENGTH_SHORT).show();
+                            if (pageDownloads.getVisibility() == View.VISIBLE) refreshDownloadsManagerPage();
+                            if (pageGallery.getVisibility() == View.VISIBLE) scanAndPopulatePhoneGalleryPage();
+                        } else {
+                            Toast.makeText(DashboardActivity.this, "Could not delete: " + videoFile.getName(), Toast.LENGTH_SHORT).show();
+                        }
+                    }).show();
             }
         });
 
