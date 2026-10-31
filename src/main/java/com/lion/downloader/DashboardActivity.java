@@ -36,6 +36,7 @@ import android.util.Size;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -70,6 +71,11 @@ public class DashboardActivity extends Activity {
 
     // 4 Separate Full-Screen Pages
     private RelativeLayout rootDashboard;
+    private FrameLayout fullscreenHost;
+    private RelativeLayout playerContainerBox;
+    private ViewGroup playerOriginalParent;
+    private ViewGroup.LayoutParams playerOriginalLayoutParams;
+    private int playerOriginalIndex = -1;
     private ScrollView pageHome, pageSettings;
     private LinearLayout pageDownloads, pageGallery;
     private LinearLayout downloadsListContainer, galleryListContainer, settingsContentContainer;
@@ -198,7 +204,7 @@ public class DashboardActivity extends Activity {
         int boxDrawable = isDarkMode ? R.drawable.frame_slate_pill : R.drawable.frame_light_pill;
         int panelDrawable = isDarkMode ? R.drawable.frame_download_panel : R.drawable.frame_light_card;
 
-        rootDashboard.setBackgroundColor(bgRoot);
+        rootDashboard.setBackgroundResource(isDarkMode ? R.drawable.bg_nexora_wallpaper : R.drawable.bg_nexora_wallpaper_light);
         findViewById(R.id.boxUrlBar).setBackgroundResource(isDarkMode ? R.drawable.frame_search_bar : R.drawable.frame_light_card);
         findViewById(R.id.boxSearchBar).setBackgroundResource(boxDrawable);
         findViewById(R.id.boxActionButtons).setBackgroundResource(boxDrawable);
@@ -238,6 +244,8 @@ public class DashboardActivity extends Activity {
 
     private void bindViews() {
         rootDashboard = findViewById(R.id.rootDashboard);
+        fullscreenHost = findViewById(R.id.fullscreenHost);
+        playerContainerBox = findViewById(R.id.playerContainerBox);
         pageHome = findViewById(R.id.pageHome);
         pageDownloads = findViewById(R.id.pageDownloads);
         pageGallery = findViewById(R.id.pageGallery);
@@ -1913,10 +1921,23 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
     }
 
     private void setPlayerFullscreen(boolean fullscreen) {
-        isPlayerFullscreen = fullscreen;
-        View decor = getWindow().getDecorView();
+        if (fullscreen == isPlayerFullscreen || fullscreenHost == null || playerContainerBox == null) return;
+
         if (fullscreen) {
-            decor.setSystemUiVisibility(
+            ViewGroup parent = (ViewGroup) playerContainerBox.getParent();
+            if (parent == null) return;
+            playerOriginalParent = parent;
+            playerOriginalIndex = parent.indexOfChild(playerContainerBox);
+            playerOriginalLayoutParams = playerContainerBox.getLayoutParams();
+            parent.removeView(playerContainerBox);
+
+            fullscreenHost.addView(playerContainerBox, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT));
+            fullscreenHost.setVisibility(View.VISIBLE);
+            fullscreenHost.bringToFront();
+            isPlayerFullscreen = true;
+            getWindow().getDecorView().setSystemUiVisibility(
                     View.SYSTEM_UI_FLAG_FULLSCREEN
                     | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
@@ -1924,8 +1945,26 @@ private void playDirectMp4InNativeView(final String mp4UrlOrPath) {
                     | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                     | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
         } else {
-            decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+            if (playerContainerBox.getParent() == fullscreenHost) {
+                fullscreenHost.removeView(playerContainerBox);
+            }
+            if (playerOriginalParent != null) {
+                int index = Math.max(0, Math.min(playerOriginalIndex, playerOriginalParent.getChildCount()));
+                playerOriginalParent.addView(playerContainerBox, index, playerOriginalLayoutParams);
+            }
+            fullscreenHost.setVisibility(View.GONE);
+            isPlayerFullscreen = false;
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (isPlayerFullscreen) {
+            setPlayerFullscreen(false);
+            return;
+        }
+        super.onBackPressed();
     }
 
     private String extractYouTubeId(String url) {
