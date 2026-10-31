@@ -80,8 +80,7 @@ This is a free and Open-Source project. It can be used by anyone, but **strictly
 5. एक **Pull Request (PR)** ओपन करें।
 
 ### GitHub Automation & Review Policy
-The Pull Request workflow validates basic event metadata and records a review policy in the Actions summary. It does not post comments or private messages, request reviewers, approve or merge PRs, or execute contributor code. Every merge requires manual review by an authorized maintainer.
+PR खुलने या दोबारा खुलने पर बॉट GitHub के trusted PR metadata से वास्तविक PR author (`pull_request.user.login`) को एक सार्वजनिक स्वागत-संदेश देता है। एक स्थायी comment marker duplicate greetings रोकता है।
 
-यह संदेश केवल PR मिलने की पुष्टि है। बॉट contributor code को execute या security-certify नहीं करता, PR approve या merge नहीं करता और कोई निजी संदेश नहीं भेजता। हर merge से पहले अधिकृत maintainer की manual review आवश्यक है।
-
+यह केवल PR मिलने की पुष्टि है—security certification या approval नहीं। Workflow contributor branch को checkout, download या execute नहीं करता। इसमें केवल public PR issue-comment के लिए आवश्यक `issues: write` permission है। बॉट reviewer request, approval, auto-accept या merge नहीं करता। हर merge अधिकृत maintainer की manual review के बाद ही होगा।
 आपके सहयोग और सुझावों के लिए बहुत-बहुत धन्यवाद! ❤️
