@@ -77,6 +77,11 @@ This is a free and Open-Source project. It can be used by anyone, but **strictly
 2. अपनी एक नई ब्रांच बनाएं (`git checkout -b feature/AmazingFeature`)।
 3. अपने बदलावों को कमिट करें (`git commit -m 'Add some AmazingFeature'`)।
 4. अपनी ब्रांच को पुश करें (`git push origin feature/AmazingFeature`)।
-5. एक **Pull Request (PR)** ओपन करें। हमारा ऑटोमैटिक बॉट आपके कोड का स्वागत करेगा! 
+5. एक **Pull Request (PR)** ओपन करें।
+
+### GitHub Automation & Review Policy
+PR खुलने या दोबारा खुलने पर NEXORA का बॉट एक ही सार्वजनिक स्वागत-संदेश पोस्ट करेगा। इसमें GitHub के PR metadata से वास्तविक PR author (`pull_request.user.login`) को mention किया जाएगा—event trigger करने वाले व्यक्ति को नहीं।
+
+यह संदेश केवल PR मिलने की पुष्टि है। बॉट contributor code को execute या security-certify नहीं करता, PR approve या merge नहीं करता और कोई निजी संदेश नहीं भेजता। हर merge से पहले अधिकृत maintainer की manual review आवश्यक है।
 
 आपके सहयोग और सुझावों के लिए बहुत-बहुत धन्यवाद! ❤️

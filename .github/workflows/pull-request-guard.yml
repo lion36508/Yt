@@ -1,0 +1,69 @@
+name: NEXORA PR Welcome (Human Review Only)
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+# pull_request_target is used only to acknowledge public PR metadata.
+# Never check out, download, or execute code from the contributor's branch.
+permissions:
+  issues: write
+
+concurrency:
+  group: nexora-pr-welcome-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  welcome:
+    name: Welcome the actual PR author
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Validate trusted PR metadata and post one acknowledgement
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          PR_NUMBER="$(jq -er '.pull_request.number | select(type == "number")' "$GITHUB_EVENT_PATH")"
+          PR_AUTHOR="$(jq -er '.pull_request.user.login | select(type == "string" and length > 0)' "$GITHUB_EVENT_PATH")"
+
+          if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Invalid pull-request number in event payload." >&2
+            exit 1
+          fi
+
+          # GitHub usernames are restricted to ASCII letters, digits and hyphens.
+          # Validate before placing the login into a shell-generated comment.
+          if [[ ! "$PR_AUTHOR" =~ ^[A-Za-z0-9-]{1,39}$ ]]; then
+            echo "Invalid pull-request author login in event payload." >&2
+            exit 1
+          fi
+
+          # A stable marker plus per-PR concurrency makes retries/reopens idempotent.
+          existing_comment_id="$(
+            gh api --paginate \
+              "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+              --jq '.[] | select(.user.login == "github-actions[bot]" and ((.body // "") | contains("<!-- nexora-pr-welcome:v1 -->"))) | .id' \
+              | sed -n '1p'
+          )"
+
+          if [[ -n "$existing_comment_id" ]]; then
+            echo "Welcome comment already exists; skipping duplicate."
+            exit 0
+          fi
+
+          body="$(cat <<EOF
+          <!-- nexora-pr-welcome:v1 -->
+          👋 Hi @${PR_AUTHOR}! Thank you for contributing to NEXORA. ❤️
+
+          Your pull request has been received. An authorized maintainer will review it manually. This message only acknowledges receipt; it is not a security review, approval, or promise to merge.
+          EOF
+          )"
+
+          gh api --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            -f body="$body" >/dev/null
+
+          echo "Posted one welcome acknowledgement for PR #${PR_NUMBER} to @${PR_AUTHOR}."
