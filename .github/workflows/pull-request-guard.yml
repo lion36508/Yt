@@ -1,39 +1,69 @@
-name: Pull Request Guard
+name: NEXORA PR Welcome (Human Review Only)
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_target:
+    types: [opened, reopened]
 
-# No write permissions, secrets, checkout, or execution of contributor code.
-permissions: {}
+# This privileged event is used only to read trusted PR metadata and post
+# one public receipt comment. Never check out or execute contributor code.
+permissions:
+  issues: write
 
 concurrency:
-  group: pull-request-guard-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: true
+  group: nexora-pr-welcome-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
 
 jobs:
-  review-policy:
-    name: Confirm human review policy
+  welcome:
+    name: Welcome the actual PR author
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    permissions: {}
     steps:
-      - name: Validate event metadata and publish policy
+      - name: Validate trusted PR metadata and post one acknowledgement
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          jq -e '
-            .pull_request != null
-            and (.pull_request.number | type == "number")
-            and (.pull_request.user.login | type == "string" and length > 0)
-          ' "$GITHUB_EVENT_PATH" >/dev/null
 
-          {
-            printf '%s\n' '## Pull request policy'
-            printf '%s\n' ''
-            printf '%s\n' '- No comments or personal messages are sent by automation.'
-            printf '%s\n' '- No reviewer requests, approvals, or automatic merges are performed.'
-            printf '%s\n' '- An authorized maintainer must review and merge changes manually.'
-            printf '%s\n' ''
-            printf '%s\n' 'This status is a policy notice, not a security certification.'
-          } >> "$GITHUB_STEP_SUMMARY"
+          PR_NUMBER="$(jq -er '.pull_request.number | select(type == "number")' "$GITHUB_EVENT_PATH")"
+          PR_AUTHOR="$(jq -er '.pull_request.user.login | select(type == "string" and length > 0)' "$GITHUB_EVENT_PATH")"
+
+          if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Invalid pull-request number in event payload." >&2
+            exit 1
+          fi
+
+          # GitHub usernames are ASCII letters, digits and hyphens.
+          # Validate before inserting the login into the public comment.
+          if [[ ! "$PR_AUTHOR" =~ ^[A-Za-z0-9-]{1,39}$ ]]; then
+            echo "Invalid pull-request author login in event payload." >&2
+            exit 1
+          fi
+
+          # Stable marker and per-PR serialization prevent duplicate greetings.
+          existing_comment_id="$(
+            gh api --paginate \
+              "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+              --jq '.[] | select(.user.login == "github-actions[bot]" and ((.body // "") | contains("<!-- nexora-pr-welcome:v2 -->"))) | .id' \
+              | sed -n '1p'
+          )"
+
+          if [[ -n "$existing_comment_id" ]]; then
+            echo "Welcome comment already exists; skipping duplicate."
+            exit 0
+          fi
+
+          body="$(cat <<EOF
+          <!-- nexora-pr-welcome:v2 -->
+          👋 Hi @${PR_AUTHOR}! Thank you for contributing to NEXORA. ❤️
+
+          Your pull request has been received. An authorized maintainer will review it manually. This message only acknowledges receipt; it is not a security review, approval, or promise to merge.
+          EOF
+          )"
+
+          gh api --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            -f body="$body" >/dev/null
+
+          echo "Posted one public welcome acknowledgement for PR #${PR_NUMBER} to @${PR_AUTHOR}."
