@@ -3,15 +3,15 @@
 NEXORA is an open-source Android application for playing and saving direct media URLs that the user owns or is licensed to download. YouTube links are handed to the official YouTube app or browser; NEXORA does not bypass platform access controls or extract protected streams.
 
 ## 🧠 Core Architecture (यह काम कैसे करता है?)
-The app runs on a strict **2-Engine, 4-Library Architecture** to ensure zero crashes and maximum speed:
+The app uses a compact Android-native architecture. The notes below describe implemented behavior and avoid performance guarantees:
 
-### 1. Engine 1: Frontend UI & Live GPU Streamer (Java + Native XML)
+### 1. Android UI and native media player (Java + XML)
 * **Direct URL playback:** Native `VideoView` plays HTTP(S) media URLs supplied by the user or a permitted provider.
-* **C++ GPU Playback (VideoView):** No slow WebViews. It uses Android's Native `VideoView` connected directly to Hardware Decoders for zero-lag live streaming.
-* **Infinite Horizontal Loop Recycler:** Memory-safe UI. Keeps a maximum of 36 video cards in RAM. As you scroll right, it adds new cards and deletes old ones, preventing storage/RAM overflow.
+* **Playback engine:** The app uses Android `VideoView` / `MediaPlayer`. Android selects the decoder; the separate C++ helper is not connected to this player.
+* **Bounded feed window:** The current Activity maintains 12 feed slots. This is a custom horizontal feed, not a `RecyclerView`; memory and performance still require device testing.
 * **Auto Theme Sync:** Automatically reads Android's `Configuration.UI_MODE_NIGHT_MASK` to switch the entire app between Dark Mode and Light Mode instantly.
 
-### 2. Engine 2: Reliable Direct Downloader
+### 2. Direct media downloader
 * **Atomic downloads:** Files are written to a `.part` file and renamed only after a complete HTTP success response, preventing corrupt videos from appearing in the gallery.
 * **Modern gallery output:** Android 10+ uses a pending `MediaStore.Downloads` row and publishes it only after the stream completes; older devices use the legacy `.part` + `MediaScannerConnection` path.
 * **Clear errors:** HTTP failures, unsupported schemes, and interrupted downloads are reported without leaving partial files behind.
