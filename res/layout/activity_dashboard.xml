@@ -3,7 +3,7 @@
     android:id="@+id/rootDashboard"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#03060C">
+    android:background="@drawable/bg_nexora_wallpaper">
 
     <!-- ========================================================= -->
     <!-- PAGE 1: HOME (STREAMER, FULL-WIDTH PLAYER & 3-DOT DL)     -->
@@ -305,7 +305,13 @@
                         android:layout_height="16dp"
                         android:src="@drawable/vec_fullscreen"/>
                 </LinearLayout>
-            </RelativeLayout>
+                <FrameLayout
+        android:id="@+id/fullscreenHost"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+</RelativeLayout>
 
             <!-- 4. PLAYER ACTION BAR WITH DOWNLOAD + 3-DOT (⋮) FORMAT/QUALITY MENU -->
             <LinearLayout
