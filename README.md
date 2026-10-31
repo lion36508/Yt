@@ -77,6 +77,9 @@ This is a free and Open-Source project. It can be used by anyone, but **strictly
 2. अपनी एक नई ब्रांच बनाएं (`git checkout -b feature/AmazingFeature`)।
 3. अपने बदलावों को कमिट करें (`git commit -m 'Add some AmazingFeature'`)।
 4. अपनी ब्रांच को पुश करें (`git push origin feature/AmazingFeature`)।
-5. एक **Pull Request (PR)** ओपन करें।\n\n### GitHub Automation & Review Policy\nइस repository का Pull Request workflow केवल event metadata की जाँच करता है और review policy दिखाता है। यह कोई comment या निजी संदेश नहीं भेजता, किसी यूज़र को request नहीं भेजता, PR को approve या merge नहीं करता और PR का code execute नहीं करता। हर merge से पहले अधिकृत maintainer की manual review आवश्यक है। 
+5. एक **Pull Request (PR)** ओपन करें।
+
+### GitHub Automation & Review Policy
+इस repository का Pull Request workflow केवल event metadata की जाँच करता है और review policy दिखाता है। यह कोई comment या निजी संदेश नहीं भेजता, किसी यूज़र को request नहीं भेजता, PR को approve या merge नहीं करता और PR का code execute नहीं करता। हर merge से पहले अधिकृत maintainer की manual review आवश्यक है। 
 
 आपके सहयोग और सुझावों के लिए बहुत-बहुत धन्यवाद! ❤️
