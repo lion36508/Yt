@@ -1,11 +1,12 @@
 name: NEXORA PR Welcome (Human Review Only)
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, reopened]
 
-# This privileged event is used only to read trusted PR metadata and post
-# one public receipt comment. Never check out or execute contributor code.
+# This workflow reads event metadata only. It never checks out or executes
+# contributor code. Fork pull requests may receive a read-only token; the
+# optional acknowledgement below must not block PR processing in that case.
 permissions:
   issues: write
 
@@ -19,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Validate trusted PR metadata and post one acknowledgement
+      - name: Validate PR metadata and post one optional acknowledgement
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -35,7 +36,6 @@ jobs:
           fi
 
           # GitHub usernames are ASCII letters, digits and hyphens.
-          # Validate before inserting the login into the public comment.
           if [[ ! "$PR_AUTHOR" =~ ^[A-Za-z0-9-]{1,39}$ ]]; then
             echo "Invalid pull-request author login in event payload." >&2
             exit 1
@@ -62,10 +62,8 @@ jobs:
           EOF
           )"
 
-          # The greeting is optional. Some repositories/fork contexts deny
-          # issue-comment writes even when the workflow itself can run.
-          # Do not fail the PR automation solely because this courtesy comment
-          # cannot be posted; keep metadata validation and duplicate checks strict.
+          # The acknowledgement is a courtesy, not a required CI operation.
+          # Permission failures (especially for fork PRs) must not fail the job.
           if gh api --method POST \
             "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
             -f body="$body" >/dev/null; then
