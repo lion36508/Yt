@@ -1,0 +1,41 @@
+name: Pull Request Guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# This workflow needs no repository write access, secrets, or checkout of PR code.
+permissions: {}
+
+concurrency:
+  group: pull-request-guard-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  review-policy:
+    name: Confirm review-only policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Validate event metadata and publish review policy
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Read only the trusted event envelope. Never check out or execute PR code.
+          jq -e '
+            .pull_request != null
+            and (.pull_request.number | type == "number")
+            and (.pull_request.user.login | type == "string" and length > 0)
+          ' "$GITHUB_EVENT_PATH" >/dev/null
+
+          {
+            printf '%s\n' '## Pull request policy'
+            printf '%s\n' ''
+            printf '%s\n' '- This workflow does not post comments or send personal messages.'
+            printf '%s\n' '- This workflow does not approve, accept, or merge pull requests.'
+            printf '%s\n' '- A repository maintainer must review and merge changes manually.'
+            printf '%s\n' ''
+            printf '%s\n' 'This status is a policy notice, not a security certification.'
+          } >> "$GITHUB_STEP_SUMMARY"
