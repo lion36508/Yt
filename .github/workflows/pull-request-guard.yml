@@ -2,7 +2,7 @@ name: NEXORA PR Welcome (Human Review Only)
 
 on:
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, synchronize]
 
 # This workflow reads event metadata only. It never checks out or executes
 # contributor code. Fork pull requests may receive a read-only token; the
