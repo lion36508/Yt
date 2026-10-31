@@ -62,8 +62,14 @@ jobs:
           EOF
           )"
 
-          gh api --method POST \
+          # The greeting is optional. Some repositories/fork contexts deny
+          # issue-comment writes even when the workflow itself can run.
+          # Do not fail the PR automation solely because this courtesy comment
+          # cannot be posted; keep metadata validation and duplicate checks strict.
+          if gh api --method POST \
             "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
-            -f body="$body" >/dev/null
-
-          echo "Posted one public welcome acknowledgement for PR #${PR_NUMBER} to @${PR_AUTHOR}."
+            -f body="$body" >/dev/null; then
+            echo "Posted one public welcome acknowledgement for PR #${PR_NUMBER} to @${PR_AUTHOR}."
+          else
+            echo "::warning::Could not post the optional welcome comment (GitHub API permission or availability issue). PR processing is unaffected."
+          fi
