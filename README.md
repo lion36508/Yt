@@ -80,7 +80,7 @@ This is a free and Open-Source project. It can be used by anyone, but **strictly
 5. एक **Pull Request (PR)** ओपन करें।
 
 ### GitHub Automation & Review Policy
-PR खुलने या दोबारा खुलने पर NEXORA का बॉट एक ही सार्वजनिक स्वागत-संदेश पोस्ट करेगा। इसमें GitHub के PR metadata से वास्तविक PR author (`pull_request.user.login`) को mention किया जाएगा—event trigger करने वाले व्यक्ति को नहीं।
+The Pull Request workflow validates basic event metadata and records a review policy in the Actions summary. It does not post comments or private messages, request reviewers, approve or merge PRs, or execute contributor code. Every merge requires manual review by an authorized maintainer.
 
 यह संदेश केवल PR मिलने की पुष्टि है। बॉट contributor code को execute या security-certify नहीं करता, PR approve या merge नहीं करता और कोई निजी संदेश नहीं भेजता। हर merge से पहले अधिकृत maintainer की manual review आवश्यक है।
 
